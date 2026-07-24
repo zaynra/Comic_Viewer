@@ -1,0 +1,8 @@
+{
+  "title": "Test Manga Series",
+  "author": "Manga Artist",
+  "description": "A test manga series with multiple chapters",
+  "genres": ["Manga", "Shonen", "Action"],
+  "language": "ja",
+  "year": 2023
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Sample Comic",
+  "author": "Test Author",
+  "description": "A sample comic for testing the viewer",
+  "genres": ["Action", "Adventure"],
+  "language": "en",
+  "year": 2024
+}

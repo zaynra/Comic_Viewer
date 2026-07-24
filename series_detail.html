@@ -1,0 +1,227 @@
+!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Saga - Series Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#4f378a",
+                        "surface-bright": "#393939",
+                        "on-background": "#e2e2e2",
+                        "surface-variant": "#353535",
+                        "surface-dim": "#131313",
+                        "tertiary-fixed": "#eaddff",
+                        "surface-container-low": "#1b1b1b",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-tertiary-container": "#e0d3f5",
+                        "error": "#ffb4ab",
+                        "on-primary": "#381e72",
+                        "on-surface": "#e2e2e2",
+                        "outline": "#948e9c",
+                        "tertiary-container": "#635a76",
+                        "inverse-on-surface": "#303030",
+                        "on-error-container": "#ffdad6",
+                        "inverse-primary": "#6750a4",
+                        "surface-container": "#1f1f1f",
+                        "background": "#131313",
+                        "on-secondary-fixed-variant": "#474746",
+                        "error-container": "#93000a",
+                        "on-secondary": "#303030",
+                        "on-tertiary-fixed-variant": "#4b425d",
+                        "on-tertiary": "#342c46",
+                        "primary-fixed-dim": "#cfbcff",
+                        "inverse-surface": "#e2e2e2",
+                        "surface-container-highest": "#353535",
+                        "secondary-container": "#474746",
+                        "on-error": "#690005",
+                        "surface-container-high": "#2a2a2a",
+                        "tertiary-fixed-dim": "#cdc1e2",
+                        "on-surface-variant": "#cbc4d2",
+                        "surface-container-lowest": "#0e0e0e",
+                        "primary-fixed": "#e9ddff",
+                        "surface-tint": "#cfbcff",
+                        "primary-container": "#6750a4",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "tertiary": "#cdc1e2",
+                        "surface": "#131313",
+                        "primary": "#cfbcff",
+                        "secondary": "#c8c6c5",
+                        "on-primary-container": "#e0d2ff",
+                        "on-secondary-container": "#b7b5b4",
+                        "outline-variant": "#494551",
+                        "on-primary-fixed": "#22005d",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-tertiary-fixed": "#1f1730"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "comic": "20px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "base": "8px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "gutter-mobile": "12px",
+                        "button": "48px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0.5px", "fontWeight": "400" }],
+                        "display-lg": ["57px", { "lineHeight": "64px", "letterSpacing": "-0.25px", "fontWeight": "700" }],
+                        "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.25px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "title-lg": ["22px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #000000; }
+        .comic-cover-gradient { background: linear-gradient(to bottom, transparent 0%, #000000 100%); }
+        .active-overlay { background: rgba(255, 255, 255, 0.08); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface antialiased pb-24 md:pb-0">
+<!-- Top Navigation (Suppressed Bottom Navigation as this is a focused detail screen) -->
+<header class="w-full top-0 sticky z-50 bg-background dark:bg-background border-b border-surface-container dark:border-surface-container-highest flat no shadows">
+<div class="flex items-center justify-between px-margin-mobile h-14 w-full">
+<button class="text-primary dark:text-primary hover:bg-surface-variant dark:hover:bg-surface-variant/10 active:scale-95 transition-transform p-2 rounded-full">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface dark:text-on-surface">Comics</div>
+<button class="text-primary dark:text-primary hover:bg-surface-variant dark:hover:bg-surface-variant/10 active:scale-95 transition-transform p-2 rounded-full">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</header>
+<main class="w-full max-w-4xl mx-auto">
+<!-- Header: Hero Image & Details -->
+<section class="relative w-full h-[530px] md:h-[618px] flex flex-col justify-end">
+<!-- Background Artwork -->
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-80" data-alt="A sweeping, highly detailed sci-fi fantasy illustration serving as a comic book cover. Features a vibrant cosmic backdrop, surreal planets, and striking, dramatic lighting. A central figure stands resilient. Deep blacks contrast with vivid, saturated hues. Premium minimalist aesthetic, high resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDauTrkl0LApR051D44SpPsYjnLxGER1Cm8ktPy6etIlq0DcOqR4-SN_Ql3NV09-52H4bqIujp4_Yprgy0FRAQrcPJazcTqoNhuOS-EsaRlBBQmMd4MTzCRLNClqyQFwUwv9a1AYFN-zRx_k9r33t21MqSSbd1mpYSd9ET2qM6mscv5TTulz6X-8AWD7TbO4wNIxiJ6F97vq_pZ0lDHjSM4tnVmdq3R3vqwMUmciyX3_MOpW1TbVwUASkJ7teVT1ao9sSlsfMqD2hJA"/>
+<div class="absolute inset-0 comic-cover-gradient z-10"></div>
+</div>
+<!-- Content overlay -->
+<div class="relative z-20 px-margin-mobile pb-xl flex flex-col gap-sm">
+<!-- Chips/Badges -->
+<div class="flex items-center gap-xs mb-sm">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-xl border border-outline text-outline font-label-lg text-label-lg">
+<span class="material-symbols-outlined text-[16px]" data-icon="download_done">download_done</span>
+                        Local
+                    </span>
+<span class="inline-flex items-center px-3 py-1 rounded-xl border border-outline text-outline font-label-lg text-label-lg">
+                        Sci-Fi
+                    </span>
+<span class="inline-flex items-center px-3 py-1 rounded-xl border border-outline text-outline font-label-lg text-label-lg">
+                        Fantasy
+                    </span>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<h1 class="font-headline-lg text-headline-lg md:font-display-lg md:text-display-lg text-on-surface m-0 leading-none mb-xs">Saga</h1>
+<p class="font-title-lg text-title-lg text-on-surface-variant m-0">Brian K. Vaughan</p>
+</div>
+<button class="p-2 rounded-full bg-surface-container-low border border-surface-container hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="favorite" data-weight="fill" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+</div>
+<!-- Actions -->
+<div class="flex flex-col md:flex-row gap-md mt-md">
+<button class="flex-1 h-button bg-primary-container text-on-primary-container rounded-full font-label-lg text-label-lg flex items-center justify-center hover:bg-inverse-primary transition-colors active:scale-[0.98]">
+                        Continue Reading
+                    </button>
+<button class="flex-1 h-button bg-transparent border border-outline text-on-surface rounded-full font-label-lg text-label-lg flex items-center justify-center hover:bg-surface-variant/20 transition-colors active:scale-[0.98]">
+                        Read from Beginning
+                    </button>
+</div>
+</div>
+</section>
+<!-- Chapter List -->
+<section class="px-margin-mobile py-lg pb-xl">
+<h2 class="font-title-lg text-title-lg text-on-surface mb-md">Chapters</h2>
+<div class="flex flex-col gap-sm">
+<!-- Chapter Row (In Progress) -->
+<div class="bg-surface-container-low border border-[#2C2C2C] rounded-comic p-md flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors group">
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-xs text-on-surface-variant font-label-sm text-label-sm">
+<span>Chapter 3</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="download_done">download_done</span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-surface m-0">The Return</h3>
+<!-- Progress Bar -->
+<div class="w-full max-w-[200px] h-[4px] bg-[#212121] rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-[#6750A4] w-[45%]"></div>
+</div>
+</div>
+</div>
+<!-- Chapter Row (Completed) -->
+<div class="bg-surface-container-low border border-[#2C2C2C] rounded-comic p-md flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors group opacity-75">
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-xs text-on-surface-variant font-label-sm text-label-sm">
+<span>Chapter 2</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="download_done">download_done</span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-surface m-0 line-through decoration-on-surface-variant/50">The Journey</h3>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="check_circle">check_circle</span>
+</div>
+<!-- Chapter Row (Completed) -->
+<div class="bg-surface-container-low border border-[#2C2C2C] rounded-comic p-md flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors group opacity-75">
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-xs text-on-surface-variant font-label-sm text-label-sm">
+<span>Chapter 1</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="download_done">download_done</span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-surface m-0 line-through decoration-on-surface-variant/50">Awakening</h3>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="check_circle">check_circle</span>
+</div>
+</div>
+</section>
+</main>
+<script>
+        // Simple touch feedback for rows
+        document.querySelectorAll('.rounded-comic').forEach(el => {
+            el.addEventListener('mousedown', () => el.classList.add('active-overlay'));
+            el.addEventListener('mouseup', () => el.classList.remove('active-overlay'));
+            el.addEventListener('mouseleave', () => el.classList.remove('active-overlay'));
+            el.addEventListener('touchstart', () => el.classList.add('active-overlay'));
+            el.addEventListener('touchend', () => el.classList.remove('active-overlay'));
+        });
+    </script>
+</body></html>
