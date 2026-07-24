@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background circle -->
+    <path
+        android:fillColor="#CFBCFF"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+    <!-- Book spine -->
+    <path
+        android:fillColor="#381E72"
+        android:pathData="M38,30L42,28L42,80L38,82Z" />
+    <!-- Book cover -->
+    <path
+        android:fillColor="#131313"
+        android:pathData="M42,28L72,28C74,28 75,29 75,31L75,77C75,79 74,80 72,80L42,80Z" />
+    <!-- Book pages -->
+    <path
+        android:fillColor="#E2E2E2"
+        android:pathData="M44,30L70,30C71.5,30 72.5,31 72.5,32.5L72.5,75.5C72.5,77 71.5,78 70,78L44,78C42.5,78 41.5,77 41.5,75.5L41.5,32.5C41.5,31 42.5,30 44,30Z" />
+    <!-- Comic panel lines -->
+    <path
+        android:fillColor="#131313"
+        android:pathData="M44,48L70,48"
+        android:strokeWidth="1.5"
+        android:strokeColor="#131313" />
+    <path
+        android:fillColor="#131313"
+        android:pathData="M57,30L57,78"
+        android:strokeWidth="1.5"
+        android:strokeColor="#131313" />
+    <!-- Comic dots pattern -->
+    <path
+        android:fillColor="#CFBCFF"
+        android:pathData="M48,36m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#CFBCFF"
+        android:pathData="M64,36m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#CFBCFF"
+        android:pathData="M48,60m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#CFBCFF"
+        android:pathData="M64,60m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <!-- Star burst accent -->
+    <path
+        android:fillColor="#6750A4"
+        android:pathData="M62,52L65,45L68,52L75,52L70,57L72,64L65,60L58,64L60,57L55,52Z" />
+</vector>

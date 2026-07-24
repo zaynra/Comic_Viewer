@@ -211,13 +211,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     });
     _hideControlsTimer?.cancel();
     if (_showControls) {
-      _hideControlsTimer = Timer(const Duration(seconds: 4), () {
-        if (mounted) {
-          setState(() {
-            _showControls = false;
-          });
-        }
-      });
+      _startAutoHideTimer();
     }
   }
 
@@ -486,16 +480,72 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     return GestureDetector(
       onTapDown: _onTapDown,
       onDoubleTapDown: _onDoubleTapDown,
-      child: InteractiveViewer(
-        transformationController: _transformationController,
-        minScale: 0.5,
-        maxScale: 5.0,
-        onInteractionUpdate: (details) {
-          setState(() {
-            _scale = _transformationController.value.getMaxScaleOnAxis();
-          });
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenW = constraints.maxWidth;
+          final screenH = constraints.maxHeight;
+
+          if (_currentImage == null) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          final imgW = _currentImage!.width.toDouble();
+          final imgH = _currentImage!.height.toDouble();
+
+          double displayW;
+          double displayH;
+
+          switch (settings.fitMode) {
+            case FitMode.fitScreen:
+              final scaleW = screenW / imgW;
+              final scaleH = screenH / imgH;
+              final scale = scaleW < scaleH ? scaleW : scaleH;
+              displayW = imgW * scale;
+              displayH = imgH * scale;
+              break;
+            case FitMode.fitWidth:
+              displayW = screenW;
+              displayH = imgH * (screenW / imgW);
+              break;
+            case FitMode.fitHeight:
+              displayH = screenH;
+              displayW = imgW * (screenH / imgH);
+              break;
+            case FitMode.original:
+              displayW = imgW;
+              displayH = imgH;
+              break;
+          }
+
+          return InteractiveViewer(
+            transformationController: _transformationController,
+            minScale: 0.5,
+            maxScale: 5.0,
+            onInteractionUpdate: (details) {
+              setState(() {
+                _scale = _transformationController.value.getMaxScaleOnAxis();
+              });
+            },
+            child: SizedBox(
+              width: screenW,
+              height: screenH,
+              child: Center(
+                child: SizedBox(
+                  width: displayW,
+                  height: displayH,
+                  child: RawImage(
+                    image: _currentImage,
+                    width: displayW,
+                    height: displayH,
+                    fit: BoxFit.fill,
+                  ),
+                ),
+              ),
+            ),
+          );
         },
-        child: _buildFittedPage(_currentImage, settings.fitMode),
       ),
     );
   }
@@ -506,35 +556,70 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     return GestureDetector(
       onTapDown: _onTapDown,
       onDoubleTapDown: _onDoubleTapDown,
-      child: Row(
-        children: [
-          if (_renderer.canGoPrevious)
-            Expanded(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 5.0,
-                child: _buildFittedPage(
-                  _currentImage,
-                  settings.fitMode,
-                ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final halfW = constraints.maxWidth / 2;
+          final screenH = constraints.maxHeight;
+
+          return Row(
+            children: [
+              Expanded(
+                child: _currentImage != null
+                    ? _buildFittedPageHalf(_currentImage!, halfW, screenH, settings.fitMode)
+                    : const Center(child: CircularProgressIndicator(color: AppColors.primary)),
               ),
-            )
-          else
-            const Expanded(child: SizedBox()),
-          if (_renderer.canGoNext)
-            Expanded(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 5.0,
-                child: _buildFittedPage(
-                  _nextImage,
-                  settings.fitMode,
-                ),
+              const SizedBox(width: 2),
+              Expanded(
+                child: _nextImage != null
+                    ? _buildFittedPageHalf(_nextImage!, halfW, screenH, settings.fitMode)
+                    : const SizedBox(),
               ),
-            )
-          else
-            const Expanded(child: SizedBox()),
-        ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFittedPageHalf(ui.Image image, double maxW, double maxH, FitMode fitMode) {
+    final imgW = image.width.toDouble();
+    final imgH = image.height.toDouble();
+
+    double displayW;
+    double displayH;
+
+    switch (fitMode) {
+      case FitMode.fitScreen:
+        final scaleW = maxW / imgW;
+        final scaleH = maxH / imgH;
+        final scale = scaleW < scaleH ? scaleW : scaleH;
+        displayW = imgW * scale;
+        displayH = imgH * scale;
+        break;
+      case FitMode.fitWidth:
+        displayW = maxW;
+        displayH = imgH * (maxW / imgW);
+        break;
+      case FitMode.fitHeight:
+        displayH = maxH;
+        displayW = imgW * (maxH / imgH);
+        break;
+      case FitMode.original:
+        displayW = imgW;
+        displayH = imgH;
+        break;
+    }
+
+    return Center(
+      child: SizedBox(
+        width: displayW,
+        height: displayH,
+        child: RawImage(
+          image: image,
+          width: displayW,
+          height: displayH,
+          fit: BoxFit.fill,
+        ),
       ),
     );
   }
@@ -549,10 +634,24 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           future: _renderer.getPageImage(index),
           builder: (context, snapshot) {
             if (snapshot.hasData && snapshot.data != null) {
-              return RawImage(
-                image: snapshot.data,
-                fit: BoxFit.fitWidth,
-                width: double.infinity,
+              final img = snapshot.data!;
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenW = constraints.maxWidth;
+                  final imgW = img.width.toDouble();
+                  final imgH = img.height.toDouble();
+                  final displayH = imgH * (screenW / imgW);
+                  return SizedBox(
+                    width: screenW,
+                    height: displayH,
+                    child: RawImage(
+                      image: img,
+                      width: screenW,
+                      height: displayH,
+                      fit: BoxFit.fill,
+                    ),
+                  );
+                },
               );
             }
             return Container(
@@ -563,48 +662,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildFittedPage(ui.Image? image, FitMode fitMode) {
-    if (image == null) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
-    }
-
-    BoxFit boxFit;
-    switch (fitMode) {
-      case FitMode.fitScreen:
-        boxFit = BoxFit.contain;
-        break;
-      case FitMode.fitWidth:
-        boxFit = BoxFit.fitWidth;
-        break;
-      case FitMode.fitHeight:
-        boxFit = BoxFit.fitHeight;
-        break;
-      case FitMode.original:
-        boxFit = BoxFit.none;
-        break;
-    }
-
-    return Center(
-      child: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
-        child: FittedBox(
-          fit: boxFit,
-          child: SizedBox(
-            width: image.width.toDouble(),
-            height: image.height.toDouble(),
-            child: RawImage(
-              image: image,
-              fit: boxFit,
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -623,11 +680,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Symbols.error,
-                      size: 64,
-                      color: AppColors.error,
-                    ),
+                    const Icon(Symbols.error, size: 64, color: AppColors.error),
                     const SizedBox(height: 16),
                     Text(
                       'Gagal memuat PDF',
@@ -749,9 +802,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               left: 0,
               right: 0,
               child: Container(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top,
-                ),
+                padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,

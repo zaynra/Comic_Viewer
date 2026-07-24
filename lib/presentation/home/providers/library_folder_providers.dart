@@ -76,41 +76,37 @@ class LibraryFolderNotifier extends AsyncNotifier<LibraryFolder?> {
     final status = await Permission.manageExternalStorage.status;
     debugPrint('[FOLDER] Permission status: $status');
 
-    if (status.isPermanentlyDenied || status.isDenied) {
-      if (context.mounted) {
-        final granted = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            icon: const Icon(Symbols.folder_off, size: 48, color: AppColors.error),
-            title: const Text('Izin Diperlukan'),
-            content: const Text(
-              'Aplikasi membutuhkan izin "Akses semua file" untuk membaca komik dari folder penyimpanan.\n\n'
-              'Tap "Buka Pengaturan" lalu aktifkan izin untuk Comic Viewer.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Batal'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Buka Pengaturan'),
-              ),
-            ],
-          ),
-        );
-
-        if (granted == true) {
-          await openAppSettings();
-          return false;
-        }
-      }
-      return false;
-    }
-
     final result = await Permission.manageExternalStorage.request();
-    return result.isGranted;
+    if (result.isGranted) return true;
+
+    if (result.isPermanentlyDenied && context.mounted) {
+      await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Symbols.folder_off, size: 48, color: AppColors.primary),
+          title: const Text('Izin Diperlukan'),
+          content: const Text(
+            'Aplikasi membutuhkan izin "Akses semua file" untuk membaca komik.\n\n'
+            'Aktifkan izin untuk Comic Viewer di pengaturan.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Nanti'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                openAppSettings();
+              },
+              child: const Text('Buka Pengaturan'),
+            ),
+          ],
+        ),
+      );
+    }
+    return false;
   }
 
   Future<void> pickFolder(BuildContext context) async {
