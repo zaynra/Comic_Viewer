@@ -11,6 +11,7 @@ class RecentRepositoryImpl implements RecentRepository {
     final maps = await db.rawQuery('''
       SELECT s.* FROM series s
       INNER JOIN recent r ON s.id = r.series_id
+      WHERE s.is_vaulted = 0
       ORDER BY r.last_opened_at DESC
       LIMIT ?
     ''', [limit]);

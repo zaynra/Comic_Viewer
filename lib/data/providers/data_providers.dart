@@ -14,6 +14,7 @@ import '../../domain/repositories/reading_progress_repository.dart';
 import '../../domain/repositories/recent_repository.dart';
 import '../../domain/repositories/series_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
+import '../../domain/repositories/folder_cover_repository.dart';
 import '../../infrastructure/services/file_watcher_service.dart';
 import '../../infrastructure/services/library_scanner.dart';
 import '../../infrastructure/services/thumbnail_service.dart';
@@ -24,6 +25,7 @@ import '../repositories/reading_progress_repository_impl.dart';
 import '../repositories/recent_repository_impl.dart';
 import '../repositories/series_repository_impl.dart';
 import '../repositories/thumbnail_repository_impl.dart';
+import '../repositories/folder_cover_repository_impl.dart';
 
 final seriesRepositoryProvider = Provider<SeriesRepository>((ref) {
   return SeriesRepositoryImpl();
@@ -56,6 +58,15 @@ final recentRepositoryProvider = Provider<RecentRepository>((ref) {
 
 final bookmarkRepositoryProvider = Provider<BookmarkRepository>((ref) {
   return BookmarkRepositoryImpl();
+});
+
+final folderCoverRepositoryProvider = Provider<FolderCoverRepository>((ref) {
+  return FolderCoverRepositoryImpl();
+});
+
+final folderCoverMapProvider = FutureProvider<Map<String, String>>((ref) async {
+  final repo = ref.watch(folderCoverRepositoryProvider);
+  return repo.getAllCovers();
 });
 
 final libraryScannerProvider = Provider<LibraryScanner>((ref) {
@@ -171,21 +182,29 @@ class FolderGroup {
     required this.name,
     required this.path,
     required this.series,
+    this.coverPath,
   });
 
   final String name;
   final String path;
   final List<Series> series;
+  final String? coverPath;
 }
 
 final folderGroupsProvider = FutureProvider<List<FolderGroup>>((ref) async {
   final seriesAsync = ref.watch(allSeriesProvider);
+  final coverMapAsync = ref.watch(folderCoverMapProvider);
+  final coverMap = await coverMapAsync.when(
+    data: (map) => map,
+    loading: () => <String, String>{},
+    error: (_, __) => <String, String>{},
+  );
+
   return seriesAsync.when(
     data: (seriesList) {
       final Map<String, List<Series>> groups = {};
       for (final series in seriesList) {
         final folderPath = p.dirname(series.path);
-        final folderName = p.basename(folderPath);
         groups.putIfAbsent(folderPath, () => []);
         groups[folderPath]!.add(series);
       }
@@ -195,6 +214,7 @@ final folderGroupsProvider = FutureProvider<List<FolderGroup>>((ref) async {
           name: p.basename(e.key),
           path: e.key,
           series: e.value,
+          coverPath: coverMap[e.key],
         );
       }).toList();
 

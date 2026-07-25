@@ -6,7 +6,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const _dbName = 'comic_viewer.db';
-  static const _dbVersion = 7;
+  static const _dbVersion = 8;
 
   Database? _database;
 
@@ -88,10 +88,29 @@ class AppDatabase {
           UNIQUE(chapter_id, page)
         )
       ''');
-      await db.execute('CREATE INDEX idx_bookmarks_chapter ON bookmarks(chapter_id)');
+    await db.execute('CREATE INDEX idx_bookmarks_chapter ON bookmarks(chapter_id)');
+
+    await db.execute('''
+      CREATE TABLE folder_covers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        folder_path TEXT NOT NULL UNIQUE,
+        cover_path TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
     }
     if (oldVersion < 7) {
       await db.execute('ALTER TABLE series ADD COLUMN is_vaulted INTEGER DEFAULT 0');
+    }
+    if (oldVersion < 8) {
+      await db.execute('''
+        CREATE TABLE folder_covers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          folder_path TEXT NOT NULL UNIQUE,
+          cover_path TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        )
+      ''');
     }
   }
 

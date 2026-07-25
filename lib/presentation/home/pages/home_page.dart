@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
@@ -1066,8 +1068,12 @@ class _FolderCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final firstSeries = group.series.first;
-    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(firstSeries.id));
+    final coverMapAsync = ref.watch(folderCoverMapProvider);
+    final customCover = coverMapAsync.when(
+      data: (map) => map[group.path],
+      loading: () => null,
+      error: (_, __) => null,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -1081,6 +1087,7 @@ class _FolderCard extends ConsumerWidget {
             builder: (context) => _FolderDetailDialog(group: group),
           );
         },
+        onLongPress: () => _showCoverSheet(context, ref),
         child: ClipRRect(
           borderRadius: AppRadius.radiusLg,
           child: BackdropFilter(
@@ -1105,20 +1112,7 @@ class _FolderCard extends ConsumerWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: AppRadius.radiusMd,
-                      child: thumbnailAsync.when(
-                        data: (thumbnail) {
-                          if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
-                            return Image.file(
-                              File(thumbnail.filePath),
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildFolderIcon(),
-                            );
-                          }
-                          return _buildFolderIcon();
-                        },
-                        loading: () => _buildFolderIcon(),
-                        error: (_, __) => _buildFolderIcon(),
-                      ),
+                      child: _buildCover(customCover),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -1155,6 +1149,18 @@ class _FolderCard extends ConsumerWidget {
     );
   }
 
+  Widget _buildCover(String? customCoverPath) {
+    if (customCoverPath != null && File(customCoverPath).existsSync()) {
+      return Image.file(
+        File(customCoverPath),
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFolderIcon(),
+      );
+    }
+    final firstSeries = group.series.first;
+    return _AutoCover(seriesId: firstSeries.id, fallback: _buildFolderIcon());
+  }
+
   Widget _buildFolderIcon() {
     return Container(
       color: AppColors.primaryContainer.withValues(alpha: 0.3),
@@ -1165,6 +1171,134 @@ class _FolderCard extends ConsumerWidget {
           size: 28,
         ),
       ),
+    );
+  }
+
+  void _showCoverSheet(BuildContext context, WidgetRef ref) {
+    final hasCover = group.coverPath != null;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        margin: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHigh,
+          borderRadius: AppRadius.radiusLg,
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  group.name,
+                  style: AppTextStyles.titleLg,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                title: Text(
+                  hasCover ? 'Change Cover' : 'Set Cover',
+                  style: AppTextStyles.bodyLg,
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickCover(context, ref);
+                },
+              ),
+              if (hasCover)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                  title: Text(
+                    'Remove Cover',
+                    style: AppTextStyles.bodyLg.copyWith(color: AppColors.error),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _removeCover(ref);
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickCover(BuildContext context, WidgetRef ref) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    final pickedFile = result.files.first;
+    if (pickedFile.path == null) return;
+
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final coversDir = Directory('${appDir.path}/folder_covers');
+      if (!coversDir.existsSync()) {
+        await coversDir.create(recursive: true);
+      }
+
+      final ext = p.extension(pickedFile.name);
+      final safeName = group.path.replaceAll(RegExp(r'[/\\]'), '_');
+      final destPath = '${coversDir.path}/$safeName$ext';
+
+      await File(pickedFile.path!).copy(destPath);
+
+      final repo = ref.read(folderCoverRepositoryProvider);
+      await repo.setCover(group.path, destPath);
+      ref.invalidate(folderCoverMapProvider);
+    } catch (_) {}
+  }
+
+  void _removeCover(WidgetRef ref) async {
+    final repo = ref.read(folderCoverRepositoryProvider);
+    final coverPath = group.coverPath;
+    if (coverPath != null && File(coverPath).existsSync()) {
+      await File(coverPath).delete();
+    }
+    await repo.deleteCover(group.path);
+    ref.invalidate(folderCoverMapProvider);
+  }
+}
+
+class _AutoCover extends ConsumerWidget {
+  const _AutoCover({required this.seriesId, required this.fallback});
+
+  final int seriesId;
+  final Widget fallback;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(seriesId));
+    return thumbnailAsync.when(
+      data: (thumbnail) {
+        if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+          return Image.file(
+            File(thumbnail.filePath),
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => fallback,
+          );
+        }
+        return fallback;
+      },
+      loading: () => fallback,
+      error: (_, __) => fallback,
     );
   }
 }

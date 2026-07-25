@@ -48,7 +48,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   Timer? _hideControlsTimer;
   final ScrollController _verticalScrollController = ScrollController();
-  final TransformationController _transformationController = TransformationController();
+  final TransformationController _transformationController =
+      TransformationController();
 
   @override
   void initState() {
@@ -74,7 +75,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       if (pageImage != null) {
         final imgW = pageImage.width.toDouble();
         final imgH = pageImage.height.toDouble();
-        pageHeight = imgH * (screenWidth / imgW);
+        pageHeight = imgH * (screenWidth / imgW) * 2.0;
       } else {
         pageHeight = screenWidth * 1.4;
       }
@@ -110,13 +111,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       await _checkBookmark();
       await _prefetchNext();
 
-      await ref.read(recentRepositoryProvider).addRecent(widget.chapter.seriesId);
+      await ref
+          .read(recentRepositoryProvider)
+          .addRecent(widget.chapter.seriesId);
       await _saveProgress();
       ref.invalidate(historyProvider);
 
       setState(() {
         _siblingChapters = chapters;
-        _currentChapterIndex = chapters.indexWhere((c) => c.id == widget.chapter.id);
+        _currentChapterIndex =
+            chapters.indexWhere((c) => c.id == widget.chapter.id);
         _isLoading = false;
       });
 
@@ -250,19 +254,23 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   Future<void> _nextPage() async {
     if (_renderer.canGoNext) {
+      final targetIndex = _renderer.currentPage + 1;
+      final ready = _nextImage;
       setState(() {
-        _isPageLoading = true;
+        if (ready == null) _isPageLoading = true;
         _scale = 1.0;
         _transformationController.value = Matrix4.identity();
       });
       await _renderer.nextPage();
-      _currentImage = _nextImage;
-      _nextImage = null;
-      _checkBookmark();
-      _prefetchNext();
+      final image = ready ?? await _renderer.getPageImage(targetIndex);
+      if (!mounted) return;
       setState(() {
+        _currentImage = image ?? _currentImage;
+        _nextImage = null;
         _isPageLoading = false;
       });
+      _checkBookmark();
+      unawaited(_prefetchNext());
     } else if (_hasNextChapter) {
       final settings = ref.read(settingsProvider);
       if (settings.autoContinue) {
@@ -275,18 +283,22 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   Future<void> _previousPage() async {
     if (_renderer.canGoPrevious) {
+      final targetIndex = _renderer.currentPage - 1;
+      final cached = _renderer.isPageCached(targetIndex);
       setState(() {
-        _isPageLoading = true;
+        if (!cached) _isPageLoading = true;
         _scale = 1.0;
         _transformationController.value = Matrix4.identity();
       });
       await _renderer.previousPage();
-      _currentImage = await _renderer.getCurrentPageImage();
-      _checkBookmark();
-      _prefetchNext();
+      final image = await _renderer.getCurrentPageImage();
+      if (!mounted) return;
       setState(() {
+        _currentImage = image ?? _currentImage;
         _isPageLoading = false;
       });
+      _checkBookmark();
+      unawaited(_prefetchNext());
     } else if (_hasPreviousChapter) {
       _goToPreviousChapter();
     }
@@ -294,8 +306,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   Future<void> _goToPage(int page) async {
     final settings = ref.read(settingsProvider);
+    final cached = _renderer.isPageCached(page);
     setState(() {
-      _isPageLoading = true;
+      if (!cached) _isPageLoading = true;
       _scale = 1.0;
       _transformationController.value = Matrix4.identity();
     });
@@ -304,13 +317,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     if (settings.readingMode == ReadingMode.vertical) {
       _scrollToPage(page);
     } else {
-      _currentImage = await _renderer.getCurrentPageImage();
+      final image = await _renderer.getCurrentPageImage();
+      if (mounted) _currentImage = image ?? _currentImage;
     }
     _checkBookmark();
-    _prefetchNext();
-    setState(() {
-      _isPageLoading = false;
-    });
+    unawaited(_prefetchNext());
+    if (mounted) {
+      setState(() {
+        _isPageLoading = false;
+      });
+    }
   }
 
   void _scrollToPage(int page) {
@@ -322,7 +338,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       if (pageImage != null) {
         final imgW = pageImage.width.toDouble();
         final imgH = pageImage.height.toDouble();
-        offset += imgH * (screenWidth / imgW);
+        offset += imgH * (screenWidth / imgW) * 2.0;
       } else {
         offset += screenWidth * 1.4;
       }
@@ -348,7 +364,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   bool get _hasPreviousChapter => _currentChapterIndex > 0;
-  bool get _hasNextChapter => _currentChapterIndex < _siblingChapters.length - 1;
+  bool get _hasNextChapter =>
+      _currentChapterIndex < _siblingChapters.length - 1;
 
   Chapter? get _previousChapter =>
       _hasPreviousChapter ? _siblingChapters[_currentChapterIndex - 1] : null;
@@ -406,15 +423,19 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           maxChildSize: 0.85,
           builder: (context, scrollController) {
             return ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
               child: BackdropFilter(
                 filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh.withValues(alpha: 0.95),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    color:
+                        AppColors.surfaceContainerHigh.withValues(alpha: 0.95),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(20)),
                     border: const Border(
-                      top: BorderSide(color: AppColors.glassBorderSubtle, width: 0.5),
+                      top: BorderSide(
+                          color: AppColors.glassBorderSubtle, width: 0.5),
                     ),
                   ),
                   child: Column(
@@ -457,7 +478,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                           ],
                         ),
                       ),
-                      const Divider(height: 1, color: AppColors.glassBorderSubtle),
+                      const Divider(
+                          height: 1, color: AppColors.glassBorderSubtle),
                       // Chapter list
                       Expanded(
                         child: ListView.builder(
@@ -471,7 +493,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                               onTap: () {
                                 Navigator.pop(context);
                                 if (index != _currentChapterIndex) {
-                                  context.pushReplacementNamed('reader', extra: chapter);
+                                  context.pushReplacementNamed('reader',
+                                      extra: chapter);
                                 }
                               },
                               leading: Container(
@@ -480,7 +503,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                 decoration: BoxDecoration(
                                   color: isCurrent
                                       ? AppColors.primary.withValues(alpha: 0.2)
-                                      : AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
+                                      : AppColors.surfaceContainerHighest
+                                          .withValues(alpha: 0.5),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Center(
@@ -502,7 +526,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
+                                  fontWeight: isCurrent
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                   color: isCurrent
                                       ? AppColors.primary
                                       : AppColors.onSurface,
@@ -590,7 +616,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: AppColors.onSurfaceVariant),
+                    icon: const Icon(Icons.close,
+                        color: AppColors.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -614,7 +641,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.light_mode, color: AppColors.outline, size: 20),
+                    const Icon(Icons.light_mode,
+                        color: AppColors.outline, size: 20),
                     Expanded(
                       child: Slider(
                         value: brightness,
@@ -625,7 +653,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                         },
                       ),
                     ),
-                    const Icon(Icons.light_mode, color: AppColors.primary, size: 20),
+                    const Icon(Icons.light_mode,
+                        color: AppColors.primary, size: 20),
                   ],
                 ),
               ),
@@ -720,11 +749,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                     return Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          ref.read(settingsProvider.notifier).setReadingMode(mode);
+                          ref
+                              .read(settingsProvider.notifier)
+                              .setReadingMode(mode);
                           setSheetState(() {});
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.sm),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.surfaceContainer
@@ -732,7 +764,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                             borderRadius: AppRadius.radiusMd,
                             border: isSelected
                                 ? Border.all(
-                                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                                    color: AppColors.outlineVariant
+                                        .withValues(alpha: 0.5),
                                   )
                                 : null,
                           ),
@@ -885,7 +918,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               break;
             case FitMode.fitWidth:
               displayW = screenW;
-              displayH = imgH * (screenW / imgW);
+              displayH = imgH * (screenW / imgW) * 2.0;
               break;
             case FitMode.fitHeight:
               displayH = screenH;
@@ -943,13 +976,17 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
             children: [
               Expanded(
                 child: _currentImage != null
-                    ? _buildFittedPageHalf(_currentImage!, halfW, screenH, settings.fitMode)
-                    : const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                    ? _buildFittedPageHalf(
+                        _currentImage!, halfW, screenH, settings.fitMode)
+                    : const Center(
+                        child: CircularProgressIndicator(
+                            color: AppColors.primary)),
               ),
               const SizedBox(width: 2),
               Expanded(
                 child: _nextImage != null
-                    ? _buildFittedPageHalf(_nextImage!, halfW, screenH, settings.fitMode)
+                    ? _buildFittedPageHalf(
+                        _nextImage!, halfW, screenH, settings.fitMode)
                     : const SizedBox(),
               ),
             ],
@@ -959,7 +996,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
   }
 
-  Widget _buildFittedPageHalf(ui.Image image, double maxW, double maxH, FitMode fitMode) {
+  Widget _buildFittedPageHalf(
+      ui.Image image, double maxW, double maxH, FitMode fitMode) {
     final imgW = image.width.toDouble();
     final imgH = image.height.toDouble();
 
@@ -1032,7 +1070,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       final screenW = constraints.maxWidth;
                       final imgW = img.width.toDouble();
                       final imgH = img.height.toDouble();
-                      final displayH = imgH * (screenW / imgW);
+                      final displayH = imgH * (screenW / imgW) * 2.0;
                       return SizedBox(
                         width: screenW,
                         height: displayH,
@@ -1049,7 +1087,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 return Container(
                   height: 400,
                   alignment: Alignment.center,
-                  child: const CircularProgressIndicator(color: AppColors.primary),
+                  child:
+                      const CircularProgressIndicator(color: AppColors.primary),
                 );
               },
             );
@@ -1131,7 +1170,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                           width: 120,
                           height: 160,
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerHigh.withValues(alpha: 0.3),
+                            color: AppColors.surfaceContainerHigh
+                                .withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(AppRadius.xl),
                             border: Border.all(
                               color: AppColors.glassBorder,
@@ -1152,7 +1192,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       'Loading PDF...',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+                        color:
+                            AppColors.onSurfaceVariant.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -1166,13 +1207,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 if (settings.darkOverlay > 0)
                   IgnorePointer(
                     child: Container(
-                      color: Colors.black.withValues(alpha: settings.darkOverlay),
+                      color:
+                          Colors.black.withValues(alpha: settings.darkOverlay),
                     ),
                   ),
                 if (settings.readingBrightness < 1.0)
                   IgnorePointer(
                     child: Container(
-                      color: Colors.white.withValues(alpha: 1.0 - settings.readingBrightness),
+                      color: Colors.white
+                          .withValues(alpha: 1.0 - settings.readingBrightness),
                     ),
                   ),
                 if (_isPageLoading)
@@ -1252,7 +1295,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       bottom: AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHighest.withValues(alpha: 0.8),
+                      color: AppColors.surfaceContainerHighest
+                          .withValues(alpha: 0.8),
                       border: const Border(
                         bottom: BorderSide(
                           color: AppColors.glassBorderSubtle,
@@ -1276,7 +1320,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                 height: 32,
                                 decoration: BoxDecoration(
                                   color: AppColors.surfaceContainerLowest,
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.sm),
                                 ),
                                 child: const Center(
                                   child: Text(
@@ -1346,7 +1391,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 children: [
                   // Page Slider
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                     child: PageSlider(
                       currentPage: _renderer.currentPage + 1,
                       totalPages: _renderer.totalPages,
@@ -1363,7 +1409,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                     padding: EdgeInsets.only(
                       left: AppSpacing.md,
                       right: AppSpacing.md,
-                      bottom: MediaQuery.of(context).padding.bottom + AppSpacing.md,
+                      bottom:
+                          MediaQuery.of(context).padding.bottom + AppSpacing.md,
                     ),
                     child: ClipRRect(
                       borderRadius: AppRadius.pill,
@@ -1375,7 +1422,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                             vertical: AppSpacing.sm,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerHigh.withValues(alpha: 0.9),
+                            color: AppColors.surfaceContainerHigh
+                                .withValues(alpha: 0.9),
                             borderRadius: AppRadius.pill,
                             border: Border.all(
                               color: AppColors.glassBorder,
@@ -1388,7 +1436,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                               _ReaderNavButton(
                                 icon: Icons.skip_previous,
                                 label: 'Prev',
-                                onPressed: _hasPreviousChapter ? _goToPreviousChapter : null,
+                                onPressed: _hasPreviousChapter
+                                    ? _goToPreviousChapter
+                                    : null,
                               ),
                               _ReaderNavButton(
                                 icon: Icons.format_list_bulleted,
@@ -1403,7 +1453,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                               _ReaderNavButton(
                                 icon: Icons.skip_next,
                                 label: 'Next',
-                                onPressed: _hasNextChapter ? _goToNextChapter : null,
+                                onPressed:
+                                    _hasNextChapter ? _goToNextChapter : null,
                               ),
                             ],
                           ),
@@ -1439,7 +1490,9 @@ class _ReaderNavButton extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Icon(
           icon,
-          color: onPressed != null ? AppColors.onSurfaceVariant : AppColors.outline,
+          color: onPressed != null
+              ? AppColors.onSurfaceVariant
+              : AppColors.outline,
           size: 24,
         ),
       ),

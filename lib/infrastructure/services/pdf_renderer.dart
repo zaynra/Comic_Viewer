@@ -40,7 +40,8 @@ class PdfRenderer {
       _currentPageIndex = 0;
       _rawCache.clear();
       _imageCache.clear();
-      debugPrint('[PDF] Opened ${_filePath.split('/').last} in ${sw.elapsedMilliseconds}ms ($_totalPages pages)');
+      debugPrint(
+          '[PDF] Opened ${_filePath.split('/').last} in ${sw.elapsedMilliseconds}ms ($_totalPages pages)');
     } catch (e) {
       throw PdfLoadException('Gagal memuat PDF: ${e.toString()}');
     }
@@ -73,14 +74,14 @@ class PdfRenderer {
     try {
       final page = await _document!.getPage(index + 1);
 
-      final renderWidth = (page.width * 2.0).roundToDouble();
-      final renderHeight = (page.height * 2.0).roundToDouble();
+      final renderWidth = (page.width * 3.0).roundToDouble();
+      final renderHeight = (page.height * 3.0).roundToDouble();
 
       final pageImage = await page.render(
         width: renderWidth,
         height: renderHeight,
         format: PdfPageImageFormat.jpeg,
-        quality: 90,
+        quality: 100,
       );
 
       await page.close();
@@ -110,7 +111,8 @@ class PdfRenderer {
 
     try {
       final buffer = await ui.ImmutableBuffer.fromUint8List(pageImage.bytes);
-      final image = await ui.instantiateImageCodecWithSize(buffer).then((codec) async {
+      final image =
+          await ui.instantiateImageCodecWithSize(buffer).then((codec) async {
         final frame = await codec.getNextFrame();
         return frame.image;
       });
@@ -133,7 +135,8 @@ class PdfRenderer {
   Future<ui.Image?> getCurrentPageImage() async {
     final sw = Stopwatch()..start();
     final image = await _convertToImage(_currentPageIndex);
-    debugPrint('[PDF] Page ${_currentPageIndex + 1} loaded in ${sw.elapsedMilliseconds}ms');
+    debugPrint(
+        '[PDF] Page ${_currentPageIndex + 1} loaded in ${sw.elapsedMilliseconds}ms');
 
     _disposeOffScreen(_currentPageIndex);
     _prefetchNeighbors();
@@ -148,6 +151,8 @@ class PdfRenderer {
   ui.Image? getCachedImage(int index) {
     return _imageCache[index];
   }
+
+  bool isPageCached(int index) => _imageCache.containsKey(index);
 
   void _prefetchNeighbors() {
     final neighbors = [
