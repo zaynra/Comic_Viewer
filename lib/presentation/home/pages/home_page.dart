@@ -9,6 +9,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../data/providers/data_providers.dart';
 import '../../../domain/entities/chapter.dart';
 import '../../../domain/entities/series.dart';
@@ -177,20 +178,17 @@ class _LibraryView extends ConsumerStatefulWidget {
 
 class _LibraryViewState extends ConsumerState<_LibraryView> {
   int _selectedTab = 0;
-  final _tabs = ['All Items', 'Folders', 'Recent', 'Favorites'];
+  final _tabs = ['All Items', 'Folders', 'Recent'];
 
   @override
   Widget build(BuildContext context) {
-    final seriesAsync = _selectedTab == 3
-        ? ref.watch(favoriteSeriesProvider)
-        : _selectedTab == 2
-            ? ref.watch(recentSeriesProvider)
-            : ref.watch(allSeriesProvider);
     final scanState = ref.watch(scanNotifierProvider);
 
     ref.listen<AsyncValue<ScanResult?>>(scanNotifierProvider, (prev, next) {
       if (prev?.value == null && next.value != null) {
         ref.invalidate(allSeriesProvider);
+        ref.invalidate(recentSeriesProvider);
+        ref.invalidate(folderGroupsProvider);
       }
     });
 
@@ -198,15 +196,12 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
       children: [
         CustomScrollView(
           slivers: [
-            // Top App Bar
             SliverToBoxAdapter(
               child: _GlassTopBar(
                 folderPath: widget.folderPath,
                 scanState: scanState,
               ),
             ),
-
-            // Filter Tabs
             SliverToBoxAdapter(
               child: _FilterTabs(
                 tabs: _tabs,
@@ -214,55 +209,15 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
                 onTap: (index) => setState(() => _selectedTab = index),
               ),
             ),
-
-            // Content
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                120, // Space for bottom nav
-              ),
-              sliver: seriesAsync.when(
-                data: (series) {
-                  if (series.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: _EmptyState(
-                        onRefresh: () async {
-                          await ref.read(scanNotifierProvider.notifier).scanFolder(widget.folderPath);
-                          ref.invalidate(allSeriesProvider);
-                        },
-                      ),
-                    );
-                  }
-
-                  return SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: AppSpacing.md,
-                      crossAxisSpacing: AppSpacing.md,
-                      childAspectRatio: 0.65,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _ComicCard(series: series[index]),
-                      childCount: series.length,
-                    ),
-                  );
-                },
-                loading: () => const SliverToBoxAdapter(
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
-                ),
-                error: (e, _) => SliverToBoxAdapter(
-                  child: Center(child: Text('Error: $e')),
-                ),
-              ),
-            ),
+            if (_selectedTab == 0)
+              _buildAllItemsSliver(ref)
+            else if (_selectedTab == 1)
+              _buildFoldersSliver(ref)
+            else
+              _buildRecentSliver(ref),
+            const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
           ],
         ),
-
-        // Bottom Navigation
         Positioned(
           left: 0,
           right: 0,
@@ -293,6 +248,146 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAllItemsSliver(WidgetRef ref) {
+    final seriesAsync = ref.watch(allSeriesProvider);
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
+      ),
+      sliver: seriesAsync.when(
+        data: (series) {
+          if (series.isEmpty) {
+            return SliverToBoxAdapter(
+              child: _EmptyState(
+                onRefresh: () async {
+                  await ref.read(scanNotifierProvider.notifier).scanFolder(widget.folderPath);
+                  ref.invalidate(allSeriesProvider);
+                },
+              ),
+            );
+          }
+          return SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
+              childAspectRatio: 0.62,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _ShelfCard(series: series[index]),
+              childCount: series.length,
+            ),
+          );
+        },
+        loading: () => const SliverToBoxAdapter(
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (e, _) => SliverToBoxAdapter(
+          child: Center(child: Text('Error: $e')),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFoldersSliver(WidgetRef ref) {
+    final folderGroupsAsync = ref.watch(folderGroupsProvider);
+    return folderGroupsAsync.when(
+      data: (folders) {
+        if (folders.isEmpty) {
+          return SliverToBoxAdapter(
+            child: _EmptyState(
+              onRefresh: () async {
+                await ref.read(scanNotifierProvider.notifier).scanFolder(widget.folderPath);
+                ref.invalidate(folderGroupsProvider);
+              },
+            ),
+          );
+        }
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _FolderCard(group: folders[index]),
+            childCount: folders.length,
+          ),
+        );
+      },
+      loading: () => const SliverToBoxAdapter(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      ),
+      error: (e, _) => SliverToBoxAdapter(
+        child: Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Widget _buildRecentSliver(WidgetRef ref) {
+    final recentAsync = ref.watch(recentSeriesProvider);
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
+      ),
+      sliver: recentAsync.when(
+        data: (series) {
+          if (series.isEmpty) {
+            return SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.history_rounded,
+                        size: 48,
+                        color: AppColors.outline,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'No recent activity',
+                        style: AppTextStyles.titleLg.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+          return SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
+              childAspectRatio: 0.62,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _ShelfCard(series: series[index]),
+              childCount: series.length,
+            ),
+          );
+        },
+        loading: () => const SliverToBoxAdapter(
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (e, _) => SliverToBoxAdapter(
+          child: Center(child: Text('Error: $e')),
+        ),
+      ),
     );
   }
 }
@@ -326,7 +421,6 @@ class _GlassTopBar extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Logo
               Container(
                 width: 32,
                 height: 32,
@@ -447,8 +541,8 @@ class _FilterTabs extends StatelessWidget {
   }
 }
 
-class _ComicCard extends ConsumerWidget {
-  const _ComicCard({required this.series});
+class _ShelfCard extends ConsumerWidget {
+  const _ShelfCard({required this.series});
 
   final Series series;
 
@@ -462,7 +556,6 @@ class _ComicCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thumbnail
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -471,6 +564,13 @@ class _ComicCard extends ConsumerWidget {
                   color: AppColors.outlineVariant.withValues(alpha: 0.3),
                   width: 0.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: ClipRRect(
                 borderRadius: AppRadius.comic,
@@ -491,7 +591,6 @@ class _ComicCard extends ConsumerWidget {
                       loading: () => _PlaceholderCover(),
                       error: (_, __) => _PlaceholderCover(),
                     ),
-                    // Progress bar at bottom
                     Positioned(
                       left: 0,
                       right: 0,
@@ -504,11 +603,10 @@ class _ComicCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          // Title
           Text(
             series.name,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: AppColors.onSurface,
             ),
@@ -516,12 +614,11 @@ class _ComicCard extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
-          // Chapter count
           chaptersAsync.when(
             data: (chapters) => Text(
               '${chapters.length} chapter',
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.05,
                 color: AppColors.outline,
@@ -531,6 +628,247 @@ class _ComicCard extends ConsumerWidget {
             error: (_, __) => const SizedBox.shrink(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FolderCard extends ConsumerWidget {
+  const _FolderCard({required this.group});
+
+  final FolderGroup group;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final firstSeries = group.series.first;
+    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(firstSeries.id));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: GestureDetector(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) => _FolderDetailDialog(group: group),
+          );
+        },
+        child: ClipRRect(
+          borderRadius: AppRadius.radiusLg,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainer.withValues(alpha: 0.5),
+                borderRadius: AppRadius.radiusLg,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      borderRadius: AppRadius.radiusMd,
+                      color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: AppRadius.radiusMd,
+                      child: thumbnailAsync.when(
+                        data: (thumbnail) {
+                          if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+                            return Image.file(
+                              File(thumbnail.filePath),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _buildFolderIcon(),
+                            );
+                          }
+                          return _buildFolderIcon();
+                        },
+                        loading: () => _buildFolderIcon(),
+                        error: (_, __) => _buildFolderIcon(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          group.name,
+                          style: AppTextStyles.titleLg.copyWith(fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${group.series.length} series',
+                          style: AppTextStyles.bodyMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFolderIcon() {
+    return Container(
+      color: AppColors.primaryContainer.withValues(alpha: 0.3),
+      child: const Center(
+        child: Icon(
+          Icons.folder_rounded,
+          color: AppColors.primary,
+          size: 28,
+        ),
+      ),
+    );
+  }
+}
+
+class _FolderDetailDialog extends StatelessWidget {
+  const _FolderDetailDialog({required this.group});
+
+  final FolderGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.surfaceContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.radiusLg,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.glassBorderSubtle,
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.folder_rounded,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      group.name,
+                      style: AppTextStyles.headlineMd,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                itemCount: group.series.length,
+                itemBuilder: (context, index) {
+                  final series = group.series[index];
+                  return _FolderSeriesItem(series: series);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FolderSeriesItem extends ConsumerWidget {
+  const _FolderSeriesItem({required this.series});
+
+  final Series series;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(series.id));
+
+    return ListTile(
+      onTap: () {
+        Navigator.pop(context);
+        context.pushNamed('series_detail', extra: series);
+      },
+      leading: Container(
+        width: 40,
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.radiusSm,
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.radiusSm,
+          child: thumbnailAsync.when(
+            data: (thumbnail) {
+              if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+                return Image.file(
+                  File(thumbnail.filePath),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                );
+              }
+              return _buildPlaceholder();
+            },
+            loading: () => _buildPlaceholder(),
+            error: (_, __) => _buildPlaceholder(),
+          ),
+        ),
+      ),
+      title: Text(
+        series.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: AppColors.surfaceContainerHighest,
+      child: const Center(
+        child: Icon(
+          Icons.auto_stories,
+          color: AppColors.outline,
+          size: 20,
+        ),
       ),
     );
   }

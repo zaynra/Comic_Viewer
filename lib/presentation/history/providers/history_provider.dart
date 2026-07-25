@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/chapter.dart';
+import '../../../domain/entities/reading_progress.dart';
 import '../../../domain/entities/series.dart';
 import '../../../data/providers/data_providers.dart';
 
@@ -38,9 +39,7 @@ final historyProvider = FutureProvider<List<HistoryGroup>>((ref) async {
   final today = DateTime(now.year, now.month, now.day);
   final yesterday = today.subtract(const Duration(days: 1));
 
-  final List<HistoryItem> todayItems = [];
-  final List<HistoryItem> yesterdayItems = [];
-  final List<HistoryItem> olderItems = [];
+  final List<HistoryItem> allItems = [];
 
   for (final series in recentSeries) {
     final chapters = await chaptersRepo.getChaptersBySeriesId(series.id);
@@ -50,28 +49,36 @@ final historyProvider = FutureProvider<List<HistoryGroup>>((ref) async {
       final progress = await progressRepo.getProgressByChapterId(chapter.id);
       if (progress == null) continue;
 
-      final item = HistoryItem(
+      final progressValue = chapter.totalPages > 0
+          ? progress.currentPage / chapter.totalPages
+          : 0.0;
+
+      allItems.add(HistoryItem(
         series: series,
         chapter: chapter,
-        progress: chapter.totalPages > 0
-            ? progress.currentPage / chapter.totalPages
-            : 0.0,
+        progress: progressValue,
         lastOpenedAt: progress.lastOpenedAt,
-      );
+      ));
+    }
+  }
 
-      final itemDate = DateTime(
-        progress.lastOpenedAt.year,
-        progress.lastOpenedAt.month,
-        progress.lastOpenedAt.day,
-      );
+  final List<HistoryItem> todayItems = [];
+  final List<HistoryItem> yesterdayItems = [];
+  final List<HistoryItem> olderItems = [];
 
-      if (!itemDate.isBefore(today)) {
-        todayItems.add(item);
-      } else if (!itemDate.isBefore(yesterday)) {
-        yesterdayItems.add(item);
-      } else {
-        olderItems.add(item);
-      }
+  for (final item in allItems) {
+    final itemDate = DateTime(
+      item.lastOpenedAt.year,
+      item.lastOpenedAt.month,
+      item.lastOpenedAt.day,
+    );
+
+    if (!itemDate.isBefore(today)) {
+      todayItems.add(item);
+    } else if (!itemDate.isBefore(yesterday)) {
+      yesterdayItems.add(item);
+    } else {
+      olderItems.add(item);
     }
   }
 

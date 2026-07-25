@@ -23,8 +23,8 @@ class PdfRenderer {
 
   final LinkedHashMap<int, PdfPageImage> _rawCache = LinkedHashMap();
   final LinkedHashMap<int, ui.Image> _imageCache = LinkedHashMap();
-  static const int _cacheSize = 6;
-  static const int _disposeRange = 8;
+  static const int _cacheSize = 8;
+  static const int _disposeRange = 10;
 
   int get currentPage => _currentPageIndex;
   int get totalPages => _totalPages;
@@ -73,13 +73,14 @@ class PdfRenderer {
     try {
       final page = await _document!.getPage(index + 1);
 
-      final renderWidth = (page.width * 2.0).roundToDouble();
-      final renderHeight = (page.height * 2.0).roundToDouble();
+      final renderWidth = (page.width * 1.5).roundToDouble();
+      final renderHeight = (page.height * 1.5).roundToDouble();
 
       final pageImage = await page.render(
         width: renderWidth,
         height: renderHeight,
-        format: PdfPageImageFormat.png,
+        format: PdfPageImageFormat.jpeg,
+        quality: 85,
       );
 
       await page.close();
@@ -145,7 +146,12 @@ class PdfRenderer {
   }
 
   void _prefetchNeighbors() {
-    final neighbors = [_currentPageIndex - 1, _currentPageIndex + 1];
+    final neighbors = [
+      _currentPageIndex - 1,
+      _currentPageIndex + 1,
+      _currentPageIndex - 2,
+      _currentPageIndex + 2,
+    ];
     for (final idx in neighbors) {
       if (idx >= 0 && idx < _totalPages && !_imageCache.containsKey(idx)) {
         unawaited(_convertToImage(idx));

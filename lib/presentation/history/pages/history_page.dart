@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -235,11 +236,11 @@ class _HistoryCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.1),
                     ),
                   ),
-                  child: ClipRRect(
+                    child: ClipRRect(
                     borderRadius: AppRadius.radiusMd,
                     child: item.series.coverPath != null
-                        ? Image.asset(
-                            item.series.coverPath!,
+                        ? Image.file(
+                            File(item.series.coverPath!),
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => _buildPlaceholder(),
                           )
