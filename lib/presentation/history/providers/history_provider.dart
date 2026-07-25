@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/chapter.dart';
-import '../../../domain/entities/reading_progress.dart';
 import '../../../domain/entities/series.dart';
 import '../../../data/providers/data_providers.dart';
 
@@ -45,21 +44,40 @@ final historyProvider = FutureProvider<List<HistoryGroup>>((ref) async {
     final chapters = await chaptersRepo.getChaptersBySeriesId(series.id);
     if (chapters.isEmpty) continue;
 
+    Chapter bestChapter = chapters.first;
+    double bestProgress = 0.0;
+    DateTime bestTime = DateTime.fromMillisecondsSinceEpoch(0);
+    bool foundProgress = false;
+
     for (final chapter in chapters) {
       final progress = await progressRepo.getProgressByChapterId(chapter.id);
-      if (progress == null) continue;
-
-      final progressValue = chapter.totalPages > 0
-          ? progress.currentPage / chapter.totalPages
-          : 0.0;
-
-      allItems.add(HistoryItem(
-        series: series,
-        chapter: chapter,
-        progress: progressValue,
-        lastOpenedAt: progress.lastOpenedAt,
-      ));
+      if (progress != null) {
+        if (progress.lastOpenedAt.isAfter(bestTime)) {
+          bestTime = progress.lastOpenedAt;
+          bestChapter = chapter;
+          bestProgress = chapter.totalPages > 0
+              ? progress.currentPage / chapter.totalPages
+              : 0.0;
+          foundProgress = true;
+        }
+      }
     }
+
+    if (!foundProgress) {
+      final chapterCount = chapters.length;
+      bestProgress = 0.0;
+    }
+
+    final itemDate = foundProgress
+        ? bestTime
+        : DateTime.now();
+
+    allItems.add(HistoryItem(
+      series: series,
+      chapter: bestChapter,
+      progress: bestProgress,
+      lastOpenedAt: itemDate,
+    ));
   }
 
   final List<HistoryItem> todayItems = [];
