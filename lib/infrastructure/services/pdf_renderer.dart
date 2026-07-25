@@ -145,6 +145,10 @@ class PdfRenderer {
     return _convertToImage(index);
   }
 
+  ui.Image? getCachedImage(int index) {
+    return _imageCache[index];
+  }
+
   void _prefetchNeighbors() {
     final neighbors = [
       _currentPageIndex - 1,

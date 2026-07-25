@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -272,18 +272,7 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
               ),
             );
           }
-          return SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: AppSpacing.md,
-              crossAxisSpacing: AppSpacing.md,
-              childAspectRatio: 0.62,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => _ShelfCard(series: series[index]),
-              childCount: series.length,
-            ),
-          );
+          return _ShelfGrid(series: series);
         },
         loading: () => const SliverToBoxAdapter(
           child: Center(
@@ -366,18 +355,7 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
               ),
             );
           }
-          return SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: AppSpacing.md,
-              crossAxisSpacing: AppSpacing.md,
-              childAspectRatio: 0.62,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => _ShelfCard(series: series[index]),
-              childCount: series.length,
-            ),
-          );
+          return _ShelfGrid(series: series);
         },
         loading: () => const SliverToBoxAdapter(
           child: Center(
@@ -386,6 +364,260 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
         ),
         error: (e, _) => SliverToBoxAdapter(
           child: Center(child: Text('Error: $e')),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShelfGrid extends StatelessWidget {
+  const _ShelfGrid({required this.series});
+
+  final List<Series> series;
+
+  @override
+  Widget build(BuildContext context) {
+    const int columnsPerRow = 2;
+    const double spacing = AppSpacing.md;
+    const double padding = AppSpacing.md;
+    final int rowCount = (series.length / columnsPerRow).ceil();
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, rowIndex) {
+          final int startIndex = rowIndex * columnsPerRow;
+          final int endIndex = (startIndex + columnsPerRow).clamp(0, series.length);
+          final rowSeries = series.sublist(startIndex, endIndex);
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: (MediaQuery.of(context).size.width - padding * 2 - spacing) / 2 * 1.5,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (int i = 0; i < rowSeries.length; i++) ...[
+                        Expanded(
+                          child: _BookCard(series: rowSeries[i]),
+                        ),
+                        if (i < rowSeries.length - 1)
+                          const SizedBox(width: spacing),
+                      ],
+                      if (rowSeries.length < columnsPerRow)
+                        for (int i = rowSeries.length; i < columnsPerRow; i++) ...[
+                          const Expanded(child: SizedBox()),
+                          if (i < columnsPerRow - 1)
+                            const SizedBox(width: spacing),
+                        ],
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 6,
+                  margin: const EdgeInsets.only(top: 4, bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHighest,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(4),
+                      bottomRight: Radius.circular(4),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: const Border(
+                      top: BorderSide(
+                        color: Colors.white10,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        childCount: rowCount,
+      ),
+    );
+  }
+}
+
+class _BookCard extends ConsumerWidget {
+  const _BookCard({required this.series});
+
+  final Series series;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(series.id));
+    final chaptersAsync = ref.watch(chaptersBySeriesProvider(series.id));
+
+    return GestureDetector(
+      onTap: () => context.pushNamed('series_detail', extra: series),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.comic,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.comic,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+                // Cover image
+                thumbnailAsync.when(
+                  data: (thumbnail) {
+                    if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+                      return Image.file(
+                        File(thumbnail.filePath),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _PlaceholderCover(),
+                      );
+                    }
+                    return _PlaceholderCover();
+                  },
+                  loading: () => _PlaceholderCover(),
+                  error: (_, __) => _PlaceholderCover(),
+                ),
+
+                // Gradient overlay at bottom
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.0),
+                          Colors.black.withValues(alpha: 0.2),
+                          Colors.black.withValues(alpha: 0.8),
+                        ],
+                        stops: const [0.0, 0.4, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Title + progress at bottom
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          series.name,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        // Progress bar
+                        Row(
+                          children: [
+                            Expanded(
+                              child: chaptersAsync.when(
+                                data: (chapters) {
+                                  if (chapters.isEmpty) return const SizedBox.shrink();
+                                  final readCount = chapters.where((c) => c.isRead).length;
+                                  final progress = readCount / chapters.length;
+                                  return Container(
+                                    height: 3,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white24,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                    child: FractionallySizedBox(
+                                      alignment: Alignment.centerLeft,
+                                      widthFactor: progress.clamp(0.0, 1.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          borderRadius: BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                loading: () => const SizedBox.shrink(),
+                                error: (_, __) => const SizedBox.shrink(),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            chaptersAsync.when(
+                              data: (chapters) {
+                                if (chapters.isEmpty) return const SizedBox.shrink();
+                                final readCount = chapters.where((c) => c.isRead).length;
+                                final progress = readCount / chapters.length;
+                                final percent = (progress * 100).round();
+                                return Text(
+                                  '$percent%',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white70,
+                                  ),
+                                );
+                              },
+                              loading: () => const SizedBox.shrink(),
+                              error: (_, __) => const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+    );
+  }
+}
+
+class _PlaceholderCover extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surfaceContainerHigh,
+      child: const Center(
+        child: Icon(
+          Icons.auto_stories,
+          size: 48,
+          color: AppColors.onSurfaceVariant,
         ),
       ),
     );
@@ -402,7 +634,7 @@ class _GlassTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           padding: EdgeInsets.only(
             top: MediaQuery.of(context).padding.top + AppSpacing.sm,
@@ -541,98 +773,6 @@ class _FilterTabs extends StatelessWidget {
   }
 }
 
-class _ShelfCard extends ConsumerWidget {
-  const _ShelfCard({required this.series});
-
-  final Series series;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(series.id));
-    final chaptersAsync = ref.watch(chaptersBySeriesProvider(series.id));
-
-    return GestureDetector(
-      onTap: () => context.pushNamed('series_detail', extra: series),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: AppRadius.comic,
-                border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                  width: 0.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: AppRadius.comic,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    thumbnailAsync.when(
-                      data: (thumbnail) {
-                        if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
-                          return Image.file(
-                            File(thumbnail.filePath),
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _PlaceholderCover(),
-                          );
-                        }
-                        return _PlaceholderCover();
-                      },
-                      loading: () => _PlaceholderCover(),
-                      error: (_, __) => _PlaceholderCover(),
-                    ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: _ProgressBar(chaptersAsync: chaptersAsync),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            series.name,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.onSurface,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          chaptersAsync.when(
-            data: (chapters) => Text(
-              '${chapters.length} chapter',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.05,
-                color: AppColors.outline,
-              ),
-            ),
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _FolderCard extends ConsumerWidget {
   const _FolderCard({required this.group});
 
@@ -658,7 +798,7 @@ class _FolderCard extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: AppRadius.radiusLg,
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
@@ -869,62 +1009,6 @@ class _FolderSeriesItem extends ConsumerWidget {
           color: AppColors.outline,
           size: 20,
         ),
-      ),
-    );
-  }
-}
-
-class _PlaceholderCover extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.surfaceContainerHigh,
-      child: const Center(
-        child: Icon(
-          Icons.auto_stories,
-          size: 48,
-          color: AppColors.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.chaptersAsync});
-
-  final AsyncValue<List<Chapter>> chaptersAsync;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 6,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHighest.withValues(alpha: 0.8),
-      ),
-      child: chaptersAsync.when(
-        data: (chapters) {
-          if (chapters.isEmpty) return const SizedBox.shrink();
-          final readCount = chapters.where((c) => c.isRead).length;
-          final progress = readCount / chapters.length;
-          return FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: progress,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGlow.withValues(alpha: 0.6),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-        loading: () => const SizedBox.shrink(),
-        error: (_, __) => const SizedBox.shrink(),
       ),
     );
   }

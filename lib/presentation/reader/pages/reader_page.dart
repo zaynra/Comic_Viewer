@@ -54,8 +54,40 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   void initState() {
     super.initState();
     _renderer = PdfRenderer(widget.chapter.filePath);
+    _verticalScrollController.addListener(_onVerticalScroll);
     _initRenderer();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  void _onVerticalScroll() {
+    if (!_verticalScrollController.hasClients) return;
+    final settings = ref.read(settingsProvider);
+    if (settings.readingMode != ReadingMode.vertical) return;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final offset = _verticalScrollController.offset;
+    double accumulated = 0;
+
+    for (int i = 0; i < _renderer.totalPages; i++) {
+      final pageImage = _renderer.getCachedImage(i);
+      double pageHeight;
+      if (pageImage != null) {
+        final imgW = pageImage.width.toDouble();
+        final imgH = pageImage.height.toDouble();
+        pageHeight = imgH * (screenWidth / imgW);
+      } else {
+        pageHeight = screenWidth * 1.4;
+      }
+
+      if (offset < accumulated + pageHeight * 0.5) {
+        if (_renderer.currentPage != i) {
+          _renderer.goToPage(i);
+          setState(() {});
+        }
+        return;
+      }
+      accumulated += pageHeight;
+    }
   }
 
   Future<void> _initRenderer() async {
@@ -101,6 +133,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   void dispose() {
     _autoNextTimer?.cancel();
     _hideControlsTimer?.cancel();
+    _verticalScrollController.removeListener(_onVerticalScroll);
     _saveProgress();
     _renderer.disposeCache();
     _renderer.close();
@@ -260,18 +293,45 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   Future<void> _goToPage(int page) async {
+    final settings = ref.read(settingsProvider);
     setState(() {
       _isPageLoading = true;
       _scale = 1.0;
       _transformationController.value = Matrix4.identity();
     });
     await _renderer.goToPage(page);
-    _currentImage = await _renderer.getCurrentPageImage();
+
+    if (settings.readingMode == ReadingMode.vertical) {
+      _scrollToPage(page);
+    } else {
+      _currentImage = await _renderer.getCurrentPageImage();
+    }
     _checkBookmark();
     _prefetchNext();
     setState(() {
       _isPageLoading = false;
     });
+  }
+
+  void _scrollToPage(int page) {
+    if (!_verticalScrollController.hasClients) return;
+    final screenWidth = MediaQuery.of(context).size.width;
+    double offset = 0;
+    for (int i = 0; i < page; i++) {
+      final pageImage = _renderer.getCachedImage(i);
+      if (pageImage != null) {
+        final imgW = pageImage.width.toDouble();
+        final imgH = pageImage.height.toDouble();
+        offset += imgH * (screenWidth / imgW);
+      } else {
+        offset += screenWidth * 1.4;
+      }
+    }
+    _verticalScrollController.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _onDoubleTapDown(TapDownDetails details) {
