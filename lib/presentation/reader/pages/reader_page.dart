@@ -186,26 +186,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   void _onTapDown(TapDownDetails details) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final tapX = details.globalPosition.dx;
-
-    if (tapX < screenWidth / 3) {
-      final settings = ref.read(settingsProvider);
-      if (settings.readingDirection == ReadingDirection.rightToLeft) {
-        _nextPage();
-      } else {
-        _previousPage();
-      }
-    } else if (tapX > screenWidth * 2 / 3) {
-      final settings = ref.read(settingsProvider);
-      if (settings.readingDirection == ReadingDirection.rightToLeft) {
-        _previousPage();
-      } else {
-        _nextPage();
-      }
-    } else {
-      _toggleControls();
-    }
+    _toggleControls();
   }
 
   void _toggleControls() {
