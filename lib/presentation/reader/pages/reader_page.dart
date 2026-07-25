@@ -17,6 +17,7 @@ import '../../../domain/entities/chapter.dart';
 import '../../../domain/entities/reading_progress.dart';
 import '../../../infrastructure/services/pdf_renderer.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../../history/providers/history_provider.dart';
 import '../../shared/widgets/widgets.dart';
 
 class ReaderPage extends ConsumerStatefulWidget {
@@ -77,7 +78,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       await _checkBookmark();
       await _prefetchNext();
 
-      ref.read(recentRepositoryProvider).addRecent(widget.chapter.seriesId);
+      await ref.read(recentRepositoryProvider).addRecent(widget.chapter.seriesId);
+      ref.invalidate(historyProvider);
 
       setState(() {
         _siblingChapters = chapters;
