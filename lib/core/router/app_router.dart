@@ -76,7 +76,7 @@ CustomTransitionPage<void> _slideUpTransition(
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/',
     routes: [
       GoRoute(
         path: '/splash',
