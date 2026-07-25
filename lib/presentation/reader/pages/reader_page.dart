@@ -9,12 +9,15 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_radius.dart';
+import '../../../core/constants/app_spacing.dart';
 import '../../../data/providers/data_providers.dart';
 import '../../../domain/entities/bookmark.dart';
 import '../../../domain/entities/chapter.dart';
 import '../../../domain/entities/reading_progress.dart';
 import '../../../infrastructure/services/pdf_renderer.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../../shared/widgets/widgets.dart';
 
 class ReaderPage extends ConsumerStatefulWidget {
   const ReaderPage({super.key, required this.chapter});
@@ -345,119 +348,315 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
   }
 
-  void _showBrightnessDialog() {
+  void _showSettingsSheet() {
     final settings = ref.read(settingsProvider);
     double brightness = settings.readingBrightness;
     double overlay = settings.darkOverlay;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Pengaturan Layar'),
-          content: Column(
+        builder: (context, setSheetState) => Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: const BoxDecoration(
+            color: AppColors.surfaceContainer,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 48,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Header
               Row(
                 children: [
-                  const Icon(Symbols.brightness_low, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Slider(
-                      value: brightness,
-                      min: 0.1,
-                      max: 1.0,
-                      onChanged: (value) {
-                        setDialogState(() => brightness = value);
-                      },
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Reader Settings',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'SETTINGS',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.1,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: AppColors.onSurfaceVariant),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Symbols.dark_mode, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Slider(
-                      value: overlay,
-                      min: 0.0,
-                      max: 0.8,
-                      onChanged: (value) {
-                        setDialogState(() => overlay = value);
-                      },
-                    ),
-                  ),
-                ],
+              const SizedBox(height: AppSpacing.lg),
+
+              // Brightness
+              const Text(
+                'Brightness',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
               ),
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: AppRadius.radiusLg,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.light_mode, color: AppColors.outline, size: 20),
+                    Expanded(
+                      child: Slider(
+                        value: brightness,
+                        min: 0.1,
+                        max: 1.0,
+                        onChanged: (value) {
+                          setSheetState(() => brightness = value);
+                        },
+                      ),
+                    ),
+                    const Icon(Icons.light_mode, color: AppColors.primary, size: 20),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // View Mode
+              const Text(
+                'View Mode',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                mainAxisSpacing: AppSpacing.sm,
+                crossAxisSpacing: AppSpacing.sm,
+                childAspectRatio: 1.5,
+                children: FitMode.values.map((mode) {
+                  final isSelected = mode == settings.fitMode;
+                  return GestureDetector(
+                    onTap: () {
+                      ref.read(settingsProvider.notifier).setFitMode(mode);
+                      setSheetState(() {});
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.1)
+                            : AppColors.surfaceContainerHigh,
+                        borderRadius: AppRadius.radiusLg,
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary.withValues(alpha: 0.3)
+                              : Colors.transparent,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _getFitModeIcon(mode),
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.onSurfaceVariant,
+                            size: 24,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            mode.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Scroll Mode
+              const Text(
+                'Scroll Mode',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: AppRadius.radiusLg,
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: ReadingMode.values.map((mode) {
+                    final isSelected = mode == settings.readingMode;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          ref.read(settingsProvider.notifier).setReadingMode(mode);
+                          setSheetState(() {});
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.surfaceContainer
+                                : Colors.transparent,
+                            borderRadius: AppRadius.radiusMd,
+                            border: isSelected
+                                ? Border.all(
+                                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                                  )
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _getReadingModeIcon(mode),
+                                size: 16,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                mode.label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Display toggles
+              const Text(
+                'Display',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _SettingsToggle(
+                icon: Icons.dark_mode,
+                title: 'Dark Mode',
+                subtitle: 'Reduce eye strain',
+                value: true,
+                onChanged: (_) {},
+              ),
+              _SettingsToggle(
+                icon: Icons.nightlight,
+                title: 'Night Filter',
+                subtitle: 'Warmer tint for reading',
+                value: overlay > 0,
+                onChanged: (value) {
+                  setSheetState(() => overlay = value ? 0.3 : 0);
+                },
+              ),
+              _SettingsToggle(
+                icon: Icons.stay_current_portrait,
+                title: 'Keep Screen On',
+                subtitle: 'Prevent sleep while reading',
+                value: settings.keepScreenOn,
+                onChanged: (value) {
+                  ref.read(settingsProvider.notifier).setKeepScreenOn(value);
+                },
+              ),
+
+              SizedBox(height: MediaQuery.of(context).padding.bottom),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () {
-                ref.read(settingsProvider.notifier).setReadingBrightness(brightness);
-                ref.read(settingsProvider.notifier).setDarkOverlay(overlay);
-                Navigator.pop(context);
-              },
-              child: const Text('Simpan'),
-            ),
-          ],
         ),
       ),
-    );
+    ).then((_) {
+      ref.read(settingsProvider.notifier).setReadingBrightness(brightness);
+      ref.read(settingsProvider.notifier).setDarkOverlay(overlay);
+    });
   }
 
-  void _showFitModeDialog() {
-    final settings = ref.read(settingsProvider);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mode Tampilan'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: FitMode.values.map((mode) {
-            return RadioListTile<FitMode>(
-              title: Text(mode.label),
-              value: mode,
-              groupValue: settings.fitMode,
-              onChanged: (value) {
-                ref.read(settingsProvider.notifier).setFitMode(value!);
-                Navigator.of(context).pop();
-              },
-            );
-          }).toList(),
-        ),
-      ),
-    );
+  IconData _getFitModeIcon(FitMode mode) {
+    switch (mode) {
+      case FitMode.fitWidth:
+        return Icons.fit_screen;
+      case FitMode.fitHeight:
+        return Icons.height;
+      case FitMode.fitScreen:
+        return Icons.crop_free;
+      case FitMode.original:
+        return Icons.aspect_ratio;
+    }
   }
 
-  void _showReadingModeDialog() {
-    final settings = ref.read(settingsProvider);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mode Baca'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: ReadingMode.values.map((mode) {
-            return RadioListTile<ReadingMode>(
-              title: Text(mode.label),
-              value: mode,
-              groupValue: settings.readingMode,
-              onChanged: (value) {
-                ref.read(settingsProvider.notifier).setReadingMode(value!);
-                Navigator.of(context).pop();
-              },
-            );
-          }).toList(),
-        ),
-      ),
-    );
+  IconData _getReadingModeIcon(ReadingMode mode) {
+    switch (mode) {
+      case ReadingMode.vertical:
+        return Icons.swap_vert;
+      case ReadingMode.doublePage:
+        return Icons.view_stream;
+      case ReadingMode.single:
+        return Icons.swap_horiz;
+    }
   }
 
   Widget _buildPageView() {
@@ -670,7 +869,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF060E20),
       body: Stack(
         children: [
           if (_error != null)
@@ -682,22 +881,27 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                   children: [
                     const Icon(Symbols.error, size: 64, color: AppColors.error),
                     const SizedBox(height: 16),
-                    Text(
+                    const Text(
                       'Gagal memuat PDF',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: AppColors.onSurface,
-                          ),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _error!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
-                    FilledButton.icon(
+                    PrimaryButton(
+                      label: 'Coba Lagi',
+                      icon: Icons.refresh,
                       onPressed: () {
                         setState(() {
                           _error = null;
@@ -705,8 +909,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                         });
                         _initRenderer();
                       },
-                      icon: const Icon(Symbols.refresh),
-                      label: const Text('Coba Lagi'),
                     ),
                     const SizedBox(height: 12),
                     TextButton(
@@ -744,186 +946,333 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ],
             ),
 
+          // Auto-next dialog
           if (_showAutoNextDialog && _nextChapter != null)
             Positioned(
               bottom: 100,
               left: 16,
               right: 16,
-              child: Card(
-                color: AppColors.surfaceContainerHigh,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Chapter selesai!',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppColors.onSurface,
-                            ),
+              child: GlassCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Chapter selesai!',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Beralih ke "${_nextChapter!.name}" dalam 5 detik...',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                        textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Beralih ke "${_nextChapter!.name}" dalam 5 detik...',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          TextButton(
-                            onPressed: _dismissAutoNextDialog,
-                            child: const Text('Batal'),
-                          ),
-                          FilledButton(
-                            onPressed: () {
-                              _autoNextTimer?.cancel();
-                              setState(() {
-                                _showAutoNextDialog = false;
-                              });
-                              _goToNextChapter();
-                            },
-                            child: const Text('Sekarang'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton(
+                          onPressed: _dismissAutoNextDialog,
+                          child: const Text('Batal'),
+                        ),
+                        FilledButton(
+                          onPressed: () {
+                            _autoNextTimer?.cancel();
+                            setState(() {
+                              _showAutoNextDialog = false;
+                            });
+                            _goToNextChapter();
+                          },
+                          child: const Text('Sekarang'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
 
+          // Top App Bar (Glassmorphism)
           if (_showControls)
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              child: Container(
-                padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.black87, Colors.transparent],
-                  ),
-                ),
-                child: AppBar(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: AppColors.onSurface,
-                  title: Text(widget.chapter.name),
-                  actions: [
-                    IconButton(
-                      icon: Icon(
-                        _isBookmarked ? Symbols.bookmark : Symbols.bookmark_border,
-                        color: _isBookmarked ? AppColors.primary : AppColors.onSurface,
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                  child: Container(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).padding.top,
+                      left: AppSpacing.md,
+                      right: AppSpacing.md,
+                      bottom: AppSpacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHighest.withValues(alpha: 0.8),
+                      border: const Border(
+                        bottom: BorderSide(
+                          color: AppColors.glassBorderSubtle,
+                          width: 0.5,
+                        ),
                       ),
-                      onPressed: _toggleBookmark,
-                      tooltip: _isBookmarked ? 'Hapus Bookmark' : 'Bookmark',
                     ),
-                    IconButton(
-                      icon: const Icon(Symbols.brightness_medium),
-                      onPressed: _showBrightnessDialog,
-                      tooltip: 'Kecerahan',
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: () => context.pop(),
+                          color: AppColors.onSurface,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceContainerLowest,
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'OR',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Text(
+                                  widget.chapter.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.onSurface,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Text(
+                            '${_renderer.currentPage + 1} / ${_renderer.totalPages}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        IconButton(
+                          icon: const Icon(Icons.search),
+                          onPressed: () {},
+                          color: AppColors.onSurface,
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Symbols.fit_screen),
-                      onPressed: _showFitModeDialog,
-                      tooltip: 'Mode Tampilan',
-                    ),
-                    IconButton(
-                      icon: const Icon(Symbols.menu_book),
-                      onPressed: _showReadingModeDialog,
-                      tooltip: 'Mode Baca',
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
 
+          // Bottom Controls (Glassmorphism)
           if (_showControls && settings.readingMode != ReadingMode.vertical)
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
-              child: Container(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).padding.bottom,
-                ),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Colors.black87, Colors.transparent],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Page Slider
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    child: PageSlider(
+                      currentPage: _renderer.currentPage + 1,
+                      totalPages: _renderer.totalPages,
+                      onChanged: (value) {
+                        _goToPage(value.toInt() - 1);
+                        _startAutoHideTimer();
+                      },
+                    ),
                   ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Symbols.skip_previous, size: 20),
-                            onPressed: _hasPreviousChapter ? _goToPreviousChapter : null,
-                            color: AppColors.onSurface,
-                            tooltip: _previousChapter?.name ?? 'File sebelumnya',
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Bottom Nav
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: AppSpacing.md,
+                      right: AppSpacing.md,
+                      bottom: MediaQuery.of(context).padding.bottom + AppSpacing.md,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: AppRadius.pill,
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.sm,
                           ),
-                          IconButton(
-                            icon: const Icon(Symbols.arrow_back_ios, size: 20),
-                            onPressed: _renderer.canGoPrevious ? _previousPage : null,
-                            color: AppColors.onSurface,
-                          ),
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '${_renderer.currentPage + 1} / ${_renderer.totalPages}',
-                                  style: const TextStyle(
-                                    color: AppColors.onSurface,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                SliderTheme(
-                                  data: SliderTheme.of(context).copyWith(
-                                    trackHeight: 2,
-                                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                                  ),
-                                  child: Slider(
-                                    value: _renderer.currentPage.toDouble(),
-                                    min: 0,
-                                    max: (_renderer.totalPages - 1).toDouble().clamp(1, double.infinity),
-                                    onChanged: (value) {
-                                      _goToPage(value.toInt());
-                                      _startAutoHideTimer();
-                                    },
-                                  ),
-                                ),
-                              ],
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh.withValues(alpha: 0.9),
+                            borderRadius: AppRadius.pill,
+                            border: Border.all(
+                              color: AppColors.glassBorder,
+                              width: 0.5,
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Symbols.arrow_forward_ios, size: 20),
-                            onPressed: _renderer.canGoNext ? _nextPage : null,
-                            color: AppColors.onSurface,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _ReaderNavButton(
+                                icon: Icons.skip_previous,
+                                label: 'Prev',
+                                onPressed: _hasPreviousChapter ? _goToPreviousChapter : null,
+                              ),
+                              _ReaderNavButton(
+                                icon: Icons.skip_next,
+                                label: 'Next',
+                                onPressed: _hasNextChapter ? _goToNextChapter : null,
+                              ),
+                              _ReaderNavButton(
+                                icon: Icons.settings,
+                                label: 'Settings',
+                                onPressed: _showSettingsSheet,
+                              ),
+                              _ReaderNavButton(
+                                icon: Icons.more_horiz,
+                                label: 'More',
+                                onPressed: () {},
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Symbols.skip_next, size: 20),
-                            onPressed: _hasNextChapter ? _goToNextChapter : null,
-                            color: AppColors.onSurface,
-                            tooltip: _nextChapter?.name ?? 'File berikutnya',
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReaderNavButton extends StatelessWidget {
+  const _ReaderNavButton({
+    required this.icon,
+    required this.label,
+    this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Icon(
+          icon,
+          color: onPressed != null ? AppColors.onSurfaceVariant : AppColors.outline,
+          size: 24,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsToggle extends StatelessWidget {
+  const _SettingsToggle({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh.withValues(alpha: 0.5),
+        borderRadius: AppRadius.radiusMd,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+          ),
         ],
       ),
     );

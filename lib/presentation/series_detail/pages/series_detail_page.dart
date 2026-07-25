@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../data/providers/data_providers.dart';
 import '../../../domain/entities/chapter.dart';
 import '../../../domain/entities/series.dart';
+import '../../shared/widgets/widgets.dart';
 
 class SeriesDetailPage extends ConsumerWidget {
   const SeriesDetailPage({super.key, required this.series});
@@ -22,38 +24,56 @@ class SeriesDetailPage extends ConsumerWidget {
     final chaptersAsync = ref.watch(chaptersBySeriesProvider(series.id));
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          _SeriesHeader(series: series),
+          _HeroHeader(series: series),
           SliverToBoxAdapter(
-            child: _SeriesInfo(series: series),
+            child: _MetadataSection(series: series, chaptersAsync: chaptersAsync),
           ),
           SliverToBoxAdapter(
-            child: _ActionButtons(chaptersAsync: chaptersAsync, series: series),
+            child: _ActionButtons(chaptersAsync: chaptersAsync),
           ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.marginMobile,
-                AppSpacing.lg,
-                AppSpacing.marginMobile,
-                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.xl,
+                AppSpacing.md,
+                AppSpacing.md,
               ),
-              child: Text(
-                'Chapters',
-                style: Theme.of(context).textTheme.titleLarge,
+              child: Row(
+                children: [
+                  const Text(
+                    'Recent Chapters',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.sort, size: 16),
+                    label: const Text('Sort'),
+                  ),
+                ],
               ),
             ),
           ),
           _ChapterList(chaptersAsync: chaptersAsync),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 100),
+          ),
         ],
       ),
     );
   }
 }
 
-class _SeriesHeader extends ConsumerWidget {
-  const _SeriesHeader({required this.series});
+class _HeroHeader extends ConsumerWidget {
+  const _HeroHeader({required this.series});
 
   final Series series;
 
@@ -64,110 +84,111 @@ class _SeriesHeader extends ConsumerWidget {
     return SliverAppBar(
       expandedHeight: 530,
       pinned: true,
+      backgroundColor: AppColors.background,
       leading: IconButton(
         icon: const Icon(Symbols.arrow_back),
         onPressed: () => Navigator.of(context).pop(),
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(Symbols.search),
+          onPressed: () {},
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
           children: [
+            // Blurred background
             thumbnailAsync.when(
               data: (thumbnail) {
                 if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
-                  return Image.file(
-                    File(thumbnail.filePath),
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.surfaceContainerHigh,
-                        child: const Icon(
-                          Symbols.book,
-                          size: 96,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      );
-                    },
+                  return ImageFiltered(
+                    imageFilter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                    child: Opacity(
+                      opacity: 0.4,
+                      child: Image.file(
+                        File(thumbnail.filePath),
+                        fit: BoxFit.cover,
+                        scale: 1.1,
+                      ),
+                    ),
                   );
                 }
-                return Container(
-                  color: AppColors.surfaceContainerHigh,
-                  child: const Icon(
-                    Symbols.book,
-                    size: 96,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                );
+                return Container(color: AppColors.background);
               },
-              loading: () => Container(
-                color: AppColors.surfaceContainerHigh,
-                child: const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
-              ),
-              error: (_, __) => Container(
-                color: AppColors.surfaceContainerHigh,
-                child: const Icon(
-                  Symbols.book,
-                  size: 96,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
+              loading: () => Container(color: AppColors.background),
+              error: (_, __) => Container(color: AppColors.background),
             ),
-            DecoratedBox(
+
+            // Gradient overlay
+            Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black],
+                  colors: [
+                    Colors.transparent,
+                    AppColors.background,
+                  ],
                 ),
               ),
             ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.background.withValues(alpha: 0.3),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+
+            // Foreground content
             Positioned(
-              left: AppSpacing.marginMobile,
-              right: AppSpacing.marginMobile,
-              bottom: AppSpacing.lg,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              bottom: AppSpacing.xl,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _ChipBadges(),
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              series.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.onSurface,
-                                  ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              series.path,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                               ),
-                          ],
+                  // Cover thumbnail
+                  _CoverThumbnail(thumbnailAsync: thumbnailAsync),
+                  const SizedBox(width: AppSpacing.md),
+
+                  // Metadata
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          series.name,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onSurface,
+                            letterSpacing: -0.02,
+                          ),
                         ),
-                      ),
-                      _FavoriteButton(seriesId: series.id),
-                    ],
+                        const SizedBox(height: AppSpacing.sm),
+                        if (series.author != null)
+                          _MetadataRow(
+                            icon: Symbols.draw,
+                            text: 'Writer: ${series.author}',
+                          ),
+                        if (series.description != null) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          _MetadataRow(
+                            icon: Symbols.book,
+                            text: series.description!,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -179,114 +200,112 @@ class _SeriesHeader extends ConsumerWidget {
   }
 }
 
-class _ChipBadges extends StatelessWidget {
+class _CoverThumbnail extends StatelessWidget {
+  const _CoverThumbnail({required this.thumbnailAsync});
+
+  final AsyncValue<dynamic> thumbnailAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 192,
+      height: 288,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.radiusXl,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.8),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: AppColors.glassBorderSubtle,
+          width: 0.5,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.radiusXl,
+        child: thumbnailAsync.when(
+          data: (thumbnail) {
+            if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+              return Image.file(
+                File(thumbnail.filePath),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _PlaceholderCover(),
+              );
+            }
+            return _PlaceholderCover();
+          },
+          loading: () => _PlaceholderCover(),
+          error: (_, __) => _PlaceholderCover(),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceholderCover extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surfaceContainerHigh,
+      child: const Center(
+        child: Icon(
+          Icons.auto_stories,
+          size: 64,
+          color: AppColors.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _MetadataRow extends StatelessWidget {
+  const _MetadataRow({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _Chip(
-          label: 'Local',
-          icon: Symbols.download_done,
+        Icon(icon, size: 14, color: AppColors.onSurfaceVariant.withValues(alpha: 0.7)),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.onSurfaceVariant.withValues(alpha: 0.9),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-        const SizedBox(width: AppSpacing.xs),
-        _Chip(label: 'PDF'),
       ],
     );
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, this.icon});
-
-  final String label;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 4,
-      ),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.outline),
-        borderRadius: BorderRadius.circular(AppRadius.full),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: AppColors.outline),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.outline,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FavoriteButton extends ConsumerWidget {
-  const _FavoriteButton({required this.seriesId});
-
-  final int seriesId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isFavoriteAsync = ref.watch(isFavoriteProvider(seriesId));
-    final isFavorite = isFavoriteAsync.valueOrNull ?? false;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.surfaceContainerHigh),
-      ),
-      child: IconButton(
-        icon: Icon(
-          Symbols.favorite,
-          color: isFavorite ? AppColors.primary : AppColors.onSurfaceVariant,
-        ),
-        onPressed: () async {
-          await ref.read(favoritesRepositoryProvider).toggleFavorite(seriesId);
-          ref.invalidate(isFavoriteProvider(seriesId));
-          ref.invalidate(favoriteSeriesProvider);
-        },
-      ),
-    );
-  }
-}
-
-class _SeriesInfo extends StatelessWidget {
-  const _SeriesInfo({required this.series});
+class _MetadataSection extends ConsumerWidget {
+  const _MetadataSection({required this.series, required this.chaptersAsync});
 
   final Series series;
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();
-  }
-}
-
-class _ActionButtons extends ConsumerWidget {
-  const _ActionButtons({required this.chaptersAsync, required this.series});
-
   final AsyncValue<List<Chapter>> chaptersAsync;
-  final Series series;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.marginMobile),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
+          // Resume button
           Expanded(
-            child: FilledButton(
+            child: PrimaryButton(
+              label: 'Resume Reading',
+              icon: Icons.play_circle,
               onPressed: () {
                 chaptersAsync.whenData((chapters) {
                   if (chapters.isNotEmpty) {
@@ -294,25 +313,56 @@ class _ActionButtons extends ConsumerWidget {
                   }
                 });
               },
-              child: const Text('Mulai Baca'),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                chaptersAsync.whenData((chapters) {
-                  if (chapters.isNotEmpty) {
-                    context.pushNamed('reader', extra: chapters.first);
-                  }
-                });
-              },
-              child: const Text('Baca dari Awal'),
+
+          // Bookmark button
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.glassBorderSubtle),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Symbols.bookmark_add,
+                color: AppColors.onSurfaceVariant,
+              ),
+              onPressed: () {},
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+
+          // More button
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.glassBorderSubtle),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Symbols.more_vert,
+                color: AppColors.onSurfaceVariant,
+              ),
+              onPressed: () {},
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+class _ActionButtons extends ConsumerWidget {
+  const _ActionButtons({required this.chaptersAsync});
+
+  final AsyncValue<List<Chapter>> chaptersAsync;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return const SizedBox.shrink();
   }
 }
 
@@ -328,18 +378,21 @@ class _ChapterList extends ConsumerWidget {
         if (chapters.isEmpty) {
           return const SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(AppSpacing.marginMobile),
+              padding: EdgeInsets.all(AppSpacing.lg),
               child: Center(
-                child: Text('Tidak ada chapter'),
+                child: Text(
+                  'Tidak ada chapter',
+                  style: TextStyle(color: AppColors.onSurfaceVariant),
+                ),
               ),
             ),
           );
         }
         return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.marginMobile),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
-              (context, index) => _ChapterCard(chapter: chapters[index]),
+              (context, index) => _ChapterItem(chapter: chapters[index]),
               childCount: chapters.length,
             ),
           ),
@@ -357,103 +410,166 @@ class _ChapterList extends ConsumerWidget {
   }
 }
 
-class _ChapterCard extends StatelessWidget {
-  const _ChapterCard({required this.chapter});
+class _ChapterItem extends StatelessWidget {
+  const _ChapterItem({required this.chapter});
 
   final Chapter chapter;
 
   @override
   Widget build(BuildContext context) {
     final isRead = chapter.isRead;
-    final hasProgress = chapter.currentPage > 0 && !isRead;
+    final isActive = chapter.currentPage > 0 && !isRead;
 
     return GestureDetector(
-      onTap: () {
-        context.pushNamed('reader', extra: chapter);
-      },
-      child: Card(
+      onTap: () => context.pushNamed('reader', extra: chapter),
+      child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Chapter ${chapter.sortOrder}',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                        ),
-                        if (isRead) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            Symbols.download_done,
-                            size: 14,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      chapter.name,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            decoration:
-                                isRead ? TextDecoration.lineThrough : null,
-                            decorationColor: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (hasProgress) ...[
-                      const SizedBox(height: 8),
-                      _ProgressBar(progress: chapter.progress),
-                    ],
-                  ],
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isActive
+              ? AppColors.surfaceContainerLow
+              : AppColors.surfaceContainerLowest,
+          borderRadius: AppRadius.radiusLg,
+          border: Border.all(
+            color: isActive
+                ? AppColors.primary.withValues(alpha: 0.2)
+                : Colors.transparent,
+            width: 0.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Thumbnail placeholder
+            Container(
+              width: 48,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isActive
+                      ? AppColors.primary.withValues(alpha: 0.3)
+                      : AppColors.glassBorderSubtle,
+                  width: 0.5,
                 ),
               ),
-              if (isRead)
-                const Icon(
-                  Symbols.check_circle,
-                  color: AppColors.primary,
-                ),
-            ],
-          ),
+              child: isActive
+                  ? const Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 32,
+                    )
+                  : isRead
+                      ? const Icon(
+                          Icons.check_circle_outline,
+                          color: AppColors.onSurfaceVariant,
+                          size: 24,
+                        )
+                      : Center(
+                          child: Text(
+                            '#${chapter.sortOrder}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    chapter.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+                      color: isActive
+                          ? AppColors.onSurface
+                          : AppColors.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${chapter.totalPages} Pages',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.05,
+                      color: AppColors.surfaceTint,
+                    ),
+                  ),
+                  if (isActive) ...[
+                    const SizedBox(height: 8),
+                    _ChapterProgress(progress: chapter.progress),
+                  ],
+                ],
+              ),
+            ),
+
+            // Action
+            if (isRead)
+              const Icon(
+                Icons.download_done,
+                color: AppColors.onSurfaceVariant,
+                size: 20,
+              )
+            else if (!isActive)
+              const Icon(
+                Icons.download,
+                color: AppColors.onSurfaceVariant,
+                size: 20,
+              ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.progress});
+class _ChapterProgress extends StatelessWidget {
+  const _ChapterProgress({required this.progress});
 
   final double progress;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 200,
-      height: 4,
-      decoration: BoxDecoration(
-        color: AppColors.progressTrack,
-        borderRadius: BorderRadius.circular(2),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: progress.clamp(0.0, 1.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.progressFill,
-            borderRadius: BorderRadius.circular(2),
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: progress.clamp(0.0, 1.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
           ),
         ),
-      ),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          '${(progress * 100).round()}%',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }
