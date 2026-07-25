@@ -181,7 +181,11 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
 
   @override
   Widget build(BuildContext context) {
-    final seriesAsync = ref.watch(allSeriesProvider);
+    final seriesAsync = _selectedTab == 3
+        ? ref.watch(favoriteSeriesProvider)
+        : _selectedTab == 2
+            ? ref.watch(recentSeriesProvider)
+            : ref.watch(allSeriesProvider);
     final scanState = ref.watch(scanNotifierProvider);
 
     ref.listen<AsyncValue<ScanResult?>>(scanNotifierProvider, (prev, next) {

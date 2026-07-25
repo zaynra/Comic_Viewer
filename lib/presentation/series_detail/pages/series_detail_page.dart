@@ -632,19 +632,6 @@ class _ChapterItem extends StatelessWidget {
               ),
             ),
 
-            // Action
-            if (isRead)
-              const Icon(
-                Icons.download_done,
-                color: AppColors.onSurfaceVariant,
-                size: 20,
-              )
-            else if (!isActive)
-              const Icon(
-                Icons.download,
-                color: AppColors.onSurfaceVariant,
-                size: 20,
-              ),
           ],
         ),
       ),

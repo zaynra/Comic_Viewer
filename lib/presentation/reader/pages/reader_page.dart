@@ -33,7 +33,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   bool _isLoading = true;
   bool _isPageLoading = false;
   String? _error;
-  bool _showControls = false;
+  bool _showControls = true;
   double _scale = 1.0;
   ReadingProgress? _savedProgress;
   List<Chapter> _siblingChapters = [];
@@ -76,6 +76,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       _currentImage = await _renderer.getCurrentPageImage();
       await _checkBookmark();
       await _prefetchNext();
+
+      ref.read(recentRepositoryProvider).addRecent(widget.chapter.seriesId);
 
       setState(() {
         _siblingChapters = chapters;
@@ -901,8 +903,49 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
             )
           else if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+            Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: const Color(0xFF060E20),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                        child: Container(
+                          width: 120,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(AppRadius.xl),
+                            border: Border.all(
+                              color: AppColors.glassBorder,
+                              width: 0.5,
+                            ),
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Loading PDF...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             )
           else
             Stack(
