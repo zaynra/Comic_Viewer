@@ -34,7 +34,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   bool _isLoading = true;
   bool _isPageLoading = false;
   String? _error;
-  bool _showControls = true;
+  bool _showControls = false;
   double _scale = 1.0;
   ReadingProgress? _savedProgress;
   List<Chapter> _siblingChapters = [];
@@ -810,43 +810,59 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   Widget _buildVerticalScrollMode() {
-    return ListView.builder(
-      controller: _verticalScrollController,
-      physics: const ClampingScrollPhysics(),
-      itemCount: _renderer.totalPages,
-      itemBuilder: (context, index) {
-        return FutureBuilder<ui.Image?>(
-          future: _renderer.getPageImage(index),
-          builder: (context, snapshot) {
-            if (snapshot.hasData && snapshot.data != null) {
-              final img = snapshot.data!;
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final screenW = constraints.maxWidth;
-                  final imgW = img.width.toDouble();
-                  final imgH = img.height.toDouble();
-                  final displayH = imgH * (screenW / imgW);
-                  return SizedBox(
-                    width: screenW,
-                    height: displayH,
-                    child: RawImage(
-                      image: img,
-                      width: screenW,
-                      height: displayH,
-                      fit: BoxFit.fill,
-                    ),
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification is ScrollStartNotification ||
+            notification is ScrollUpdateNotification) {
+          if (_showControls) {
+            setState(() {
+              _showControls = false;
+            });
+          }
+        }
+        return false;
+      },
+      child: GestureDetector(
+        onTapUp: (_) => _toggleControls(),
+        child: ListView.builder(
+          controller: _verticalScrollController,
+          physics: const ClampingScrollPhysics(),
+          itemCount: _renderer.totalPages,
+          itemBuilder: (context, index) {
+            return FutureBuilder<ui.Image?>(
+              future: _renderer.getPageImage(index),
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data != null) {
+                  final img = snapshot.data!;
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final screenW = constraints.maxWidth;
+                      final imgW = img.width.toDouble();
+                      final imgH = img.height.toDouble();
+                      final displayH = imgH * (screenW / imgW);
+                      return SizedBox(
+                        width: screenW,
+                        height: displayH,
+                        child: RawImage(
+                          image: img,
+                          width: screenW,
+                          height: displayH,
+                          fit: BoxFit.fill,
+                        ),
+                      );
+                    },
                   );
-                },
-              );
-            }
-            return Container(
-              height: 400,
-              alignment: Alignment.center,
-              child: const CircularProgressIndicator(color: AppColors.primary),
+                }
+                return Container(
+                  height: 400,
+                  alignment: Alignment.center,
+                  child: const CircularProgressIndicator(color: AppColors.primary),
+                );
+              },
             );
           },
-        );
-      },
+        ),
+      ),
     );
   }
 
