@@ -24,10 +24,13 @@ class GlassBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: AppSpacing.md,
-      right: AppSpacing.md,
-      bottom: AppSpacing.safeMargin,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.safeMargin,
+      ),
       child: ClipRRect(
         borderRadius: AppRadius.pill,
         child: BackdropFilter(

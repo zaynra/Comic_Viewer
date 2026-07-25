@@ -259,29 +259,34 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
         ),
 
         // Bottom Navigation
-        GlassBottomNav(
-          currentIndex: 0,
-          onTap: (index) {
-            if (index == 1) context.push('/history');
-            if (index == 2) context.push('/settings');
-          },
-          items: const [
-            GlassBottomNavItem(
-              icon: Icons.grid_view_outlined,
-              activeIcon: Icons.grid_view,
-              label: 'Library',
-            ),
-            GlassBottomNavItem(
-              icon: Icons.history_outlined,
-              activeIcon: Icons.history,
-              label: 'History',
-            ),
-            GlassBottomNavItem(
-              icon: Icons.settings_outlined,
-              activeIcon: Icons.settings,
-              label: 'Settings',
-            ),
-          ],
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: GlassBottomNav(
+            currentIndex: 0,
+            onTap: (index) {
+              if (index == 1) context.push('/history');
+              if (index == 2) context.push('/settings');
+            },
+            items: const [
+              GlassBottomNavItem(
+                icon: Icons.grid_view_outlined,
+                activeIcon: Icons.grid_view,
+                label: 'Library',
+              ),
+              GlassBottomNavItem(
+                icon: Icons.history_outlined,
+                activeIcon: Icons.history,
+                label: 'History',
+              ),
+              GlassBottomNavItem(
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings,
+                label: 'Settings',
+              ),
+            ],
+          ),
         ),
       ],
     );

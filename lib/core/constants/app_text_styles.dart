@@ -1,95 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// OmnivousReader Design System — Typography Tokens
-/// Source: design/lumina_reader/DESIGN.md
-///
-/// Fonts:
-/// - Inter: UI text (headlines, titles, body)
-/// - Geist: Labels, metadata (page numbers, timestamps)
 class AppTextStyles {
   AppTextStyles._();
 
-  // ──────────────────────────────────────────────
-  // Headlines (Inter)
-  // ──────────────────────────────────────────────
+  static const String _fontFamily = 'Roboto';
 
-  /// 28px / 34px / 700 / letter-spacing: -0.02em
-  static TextStyle get headlineLg => GoogleFonts.inter(
+  static TextStyle get headlineLg => const TextStyle(
         fontSize: 28,
         height: 34 / 28,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.02,
         color: AppColors.onSurface,
+        fontFamily: _fontFamily,
       );
 
-  /// 24px / 30px / 700 — mobile variant
-  static TextStyle get headlineLgMobile => GoogleFonts.inter(
+  static TextStyle get headlineLgMobile => const TextStyle(
         fontSize: 24,
         height: 30 / 24,
         fontWeight: FontWeight.w700,
         color: AppColors.onSurface,
+        fontFamily: _fontFamily,
       );
 
-  /// 22px / 28px / 600
-  static TextStyle get headlineMd => GoogleFonts.inter(
+  static TextStyle get headlineMd => const TextStyle(
         fontSize: 22,
         height: 28 / 22,
         fontWeight: FontWeight.w600,
         color: AppColors.onSurface,
+        fontFamily: _fontFamily,
       );
 
-  // ──────────────────────────────────────────────
-  // Titles (Inter)
-  // ──────────────────────────────────────────────
-
-  /// 18px / 24px / 600
-  static TextStyle get titleLg => GoogleFonts.inter(
+  static TextStyle get titleLg => const TextStyle(
         fontSize: 18,
         height: 24 / 18,
         fontWeight: FontWeight.w600,
         color: AppColors.onSurface,
+        fontFamily: _fontFamily,
       );
 
-  // ──────────────────────────────────────────────
-  // Body (Inter)
-  // ──────────────────────────────────────────────
-
-  /// 16px / 24px / 400
-  static TextStyle get bodyLg => GoogleFonts.inter(
+  static TextStyle get bodyLg => const TextStyle(
         fontSize: 16,
         height: 24 / 16,
         fontWeight: FontWeight.w400,
         color: AppColors.onSurface,
+        fontFamily: _fontFamily,
       );
 
-  /// 14px / 20px / 400
-  static TextStyle get bodyMd => GoogleFonts.inter(
+  static TextStyle get bodyMd => const TextStyle(
         fontSize: 14,
         height: 20 / 14,
         fontWeight: FontWeight.w400,
         color: AppColors.onSurface,
+        fontFamily: _fontFamily,
       );
 
-  // ──────────────────────────────────────────────
-  // Labels (Geist)
-  // ──────────────────────────────────────────────
-
-  /// 12px / 16px / 500 / letter-spacing: 0.05em
-  static TextStyle get labelMd => GoogleFonts.getFont(
-        'Geist',
+  static TextStyle get labelMd => const TextStyle(
         fontSize: 12,
         height: 16 / 12,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.05,
         color: AppColors.onSurfaceVariant,
+        fontFamily: _fontFamily,
       );
-
-  // ──────────────────────────────────────────────
-  // Convenience: Colored Variants
-  // ──────────────────────────────────────────────
 
   static TextStyle get headlineLgPrimary =>
       headlineLg.copyWith(color: AppColors.primary);

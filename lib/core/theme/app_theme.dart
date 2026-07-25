@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/app_colors.dart';
 import '../constants/app_radius.dart';
@@ -61,9 +60,7 @@ class AppTheme {
       onInverseSurface: AppColors.inverseOnSurface,
     );
 
-    final textTheme = GoogleFonts.interTextTheme(
-      const TextTheme(),
-    ).copyWith(
+    final textTheme = const TextTheme().copyWith(
       // Headlines
       headlineLarge: AppTextStyles.headlineLg,
       headlineMedium: AppTextStyles.headlineMd,
