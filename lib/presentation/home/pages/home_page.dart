@@ -378,6 +378,8 @@ class _ShelfGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const int columnsPerRow = 2;
+    const double spacing = AppSpacing.md;
+    const double padding = AppSpacing.md;
     final int rowCount = (series.length / columnsPerRow).ceil();
 
     return SliverList(
@@ -392,30 +394,30 @@ class _ShelfGrid extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Comics row
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (int i = 0; i < rowSeries.length; i++) ...[
-                      Expanded(
-                        child: _BookCard(series: rowSeries[i]),
-                      ),
-                      if (i < rowSeries.length - 1)
-                        const SizedBox(width: AppSpacing.md),
-                    ],
-                    // Fill empty slots
-                    if (rowSeries.length < columnsPerRow)
-                      for (int i = rowSeries.length; i < columnsPerRow; i++) ...[
-                        const Expanded(child: SizedBox()),
-                        if (i < columnsPerRow - 1)
-                          const SizedBox(width: AppSpacing.md),
+                SizedBox(
+                  height: (MediaQuery.of(context).size.width - padding * 2 - spacing) / 2 * 1.5,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (int i = 0; i < rowSeries.length; i++) ...[
+                        Expanded(
+                          child: _BookCard(series: rowSeries[i]),
+                        ),
+                        if (i < rowSeries.length - 1)
+                          const SizedBox(width: spacing),
                       ],
-                  ],
+                      if (rowSeries.length < columnsPerRow)
+                        for (int i = rowSeries.length; i < columnsPerRow; i++) ...[
+                          const Expanded(child: SizedBox()),
+                          if (i < columnsPerRow - 1)
+                            const SizedBox(width: spacing),
+                        ],
+                    ],
+                  ),
                 ),
-                // Shelf ledge
                 Container(
                   height: 6,
-                  margin: const EdgeInsets.only(top: 2),
+                  margin: const EdgeInsets.only(top: 4, bottom: 16),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceContainerHighest,
                     borderRadius: const BorderRadius.only(
@@ -459,24 +461,22 @@ class _BookCard extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () => context.pushNamed('series_detail', extra: series),
-      child: AspectRatio(
-        aspectRatio: 2 / 3,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: AppRadius.comic,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: AppRadius.comic,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.comic,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.comic,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
                 // Cover image
                 thumbnailAsync.when(
                   data: (thumbnail) {
@@ -604,7 +604,6 @@ class _BookCard extends ConsumerWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
