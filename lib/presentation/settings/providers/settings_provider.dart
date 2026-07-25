@@ -34,8 +34,8 @@ class SettingsState {
   const SettingsState({
     this.themeMode = ThemeMode.dark,
     this.readingDirection = ReadingDirection.leftToRight,
-    this.readingMode = ReadingMode.single,
-    this.fitMode = FitMode.fitScreen,
+    this.readingMode = ReadingMode.vertical,
+    this.fitMode = FitMode.fitWidth,
     this.orientationMode = OrientationMode.auto,
     this.keepScreenOn = true,
     this.readingBrightness = 1.0,
@@ -97,8 +97,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   void _loadSettings() {
     final themeIndex = _prefs.getInt('theme_mode') ?? 2;
     final directionIndex = _prefs.getInt('reading_direction') ?? 0;
-    final readingModeIndex = _prefs.getInt('reading_mode') ?? 0;
-    final fitModeIndex = _prefs.getInt('fit_mode') ?? 0;
+    final readingModeIndex = _prefs.getInt('reading_mode') ?? 2;
+    final fitModeIndex = _prefs.getInt('fit_mode') ?? 1;
     final orientationIndex = _prefs.getInt('orientation_mode') ?? 0;
     final keepScreenOn = _prefs.getBool('keep_screen_on') ?? true;
     final readingBrightness = _prefs.getDouble('reading_brightness') ?? 1.0;

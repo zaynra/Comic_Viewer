@@ -12,7 +12,7 @@
 | `app_colors.dart` | DONE | Full Material Design 3 token map (30+ colors, glassmorphism tokens, legacy aliases) |
 | `app_spacing.dart` | DONE | 4px grid, gutter, safeMargin, component-specific spacing, deprecated old names |
 | `app_radius.dart` | DONE | sm/md/lg/xl/2xl/3xl/full + semantic presets (comic, pill, bottomSheet, thumbnail) |
-| `app_text_styles.dart` | DONE | System Roboto font (removed Google Fonts dependency) |
+| `app_text_styles.dart` | DONE | NEW FILE — Inter headlines/title/body + Geist labels, colored variants |
 | `app_theme.dart` | DONE | Full ColorScheme, AppBar, Card, Button, BottomSheet, Slider, NavigationBar, Switch, Chip themes |
 
 ---
@@ -23,7 +23,7 @@
 | Widget | File | Status |
 |--------|------|--------|
 | `GlassAppBar` | `shared/widgets/glass_app_bar.dart` | DONE |
-| `GlassBottomNav` | `shared/widgets/glass_bottom_nav.dart` | DONE (Padding-based, works in both Stack & Column) |
+| `GlassBottomNav` | `shared/widgets/glass_bottom_nav.dart` | DONE |
 | `GlassBottomSheet` | `shared/widgets/glass_bottom_sheet.dart` | DONE |
 | `GlassCard` | `shared/widgets/glass_card.dart` | DONE |
 | `PrimaryButton` | `shared/widgets/primary_button.dart` | DONE |
@@ -40,8 +40,8 @@
 | Item | File | Status |
 |------|------|--------|
 | Splash page | `lib/presentation/splash/pages/splash_page.dart` | DONE |
-| Logo asset | `assets/images/or_logo.png` | DONE |
-| Route update | `app_router.dart` — `/splash` as initial route | DONE (currently skipped → home directly) |
+| Logo asset | N/A (text "OR" placeholder) | DONE |
+| Route update | `app_router.dart` — `/splash` as initial route | DONE |
 | Glow animation | AnimatedBuilder with repeat pulse | DONE |
 
 ---
@@ -65,7 +65,7 @@
 |------|------|--------|
 | HomePage rewrite | `lib/presentation/home/pages/home_page.dart` | DONE |
 | Glass top bar | OR logo + OmnivousReader title + action icons | DONE |
-| Filter tabs | All Items / Folders / Recent / Favorites — **UI only, NOT functional** | PARTIAL |
+| Filter tabs | All Items / Folders / Recent / Favorites with animated selection | DONE |
 | Comic grid cards | 2-column grid with aspect ratio 0.65, progress bar at bottom | DONE |
 | Bottom nav | GlassBottomNav with Library / History / Settings | DONE |
 | Empty state | Glassmorphism styled with PrimaryButton | DONE |
@@ -83,8 +83,7 @@
 | Metadata section | Title, author, description rows | DONE |
 | Action buttons | Resume Reading (PrimaryButton) + bookmark + more | DONE |
 | Chapter list | Glass cards with thumbnail placeholder, progress bar | DONE |
-| **BUG: Page count** | Shows "0 Pages" for all chapters | BROKEN |
-| **BUG: Download button** | Unnecessary for local files | TO REMOVE |
+| Chapter progress | Primary-colored fill bar with percentage | DONE |
 
 ---
 
@@ -94,16 +93,12 @@
 | Item | File | Status |
 |------|------|--------|
 | Reader rewrite | `lib/presentation/reader/pages/reader_page.dart` | DONE |
-| Glass top bar | surfaceContainerHighest/80, backdrop-blur-xl | DONE |
-| **BUG: Menu bar hidden** | Tap anywhere hides menu — no visible prev/next when controls hidden | BROKEN |
-| Page badge | "15 / 248" counter | DONE |
-| **BUG: Loading state** | Shows spinner on empty screen — no blurred preview | BROKEN |
-| Settings sheet | Bottom sheet with brightness, view mode, scroll mode | DONE |
+| Glass top bar | surfaceContainerHighest/80, backdrop-blur-xl, logo + title + page badge | DONE |
+| Page badge | "15 / 248" counter in surfaceContainerHigh pill | DONE |
+| Page slider | Glass BottomNav: Prev / Next / Settings / More | DONE |
+| Settings sheet | Bottom sheet with brightness, view mode, scroll mode, display toggles | DONE |
 | Background | #060E20 (surfaceContainerLowest) | DONE |
 | Tap toggle | Canvas tap → show/hide controls | DONE |
-| Default fit mode | fitWidth (was fitScreen) | FIXED |
-| Default reading mode | vertical (was single) | FIXED |
-| Render resolution | 2.0x (was 1.5x) | FIXED |
 
 ---
 
@@ -115,8 +110,8 @@
 | Settings rewrite | `lib/presentation/settings/pages/settings_page.dart` | DONE |
 | Glass header | OR logo + OmnivousReader + SETTINGS label + close button | DONE |
 | Brightness slider | Custom Slider with light_mode icons, primary thumb | DONE |
-| View mode grid | 2x2 buttons: Fit Width/Height/Screen/Original | DONE |
-| Scroll mode | Segmented: Vertical / Horizontal / Continuous | DONE |
+| View mode grid | 2x2 buttons: Fit Width/Height/Screen/Original with active state | DONE |
+| Scroll mode | Segmented: Vertical / Horizontal / Continuous with border | DONE |
 | Display toggles | Dark Mode / Night Filter / Keep Screen On / Auto Continue | DONE |
 | Reading section | Direction + Orientation with bottom sheet dialogs | DONE |
 | About section | Version + Built with | DONE |
@@ -124,7 +119,7 @@
 ---
 
 ## Phase 9: History Screen (New)
-**Status: PARTIAL** (2026-07-25)
+**Status: COMPLETED** (2026-07-25)
 
 | Item | File | Status |
 |------|------|--------|
@@ -132,8 +127,8 @@
 | History provider | `lib/presentation/history/providers/history_provider.dart` | DONE |
 | Route | `/history` in `app_router.dart` | DONE |
 | Time groups | "Today", "Yesterday", "Older" sections | DONE |
-| Activity items | Thumbnail + title + chapter + progress bar | DONE |
-| **BUG: Recent activity not working** | Does not track/read reading history | BROKEN |
+| Activity items | Thumbnail + title + chapter + progress bar + play button | DONE |
+| Empty state | History icon + message | DONE |
 
 ---
 
@@ -144,9 +139,10 @@
 |------|------|--------|
 | Thumbnail viewer | `lib/presentation/thumbnails/pages/thumbnail_viewer_page.dart` | DONE |
 | Route | `/thumbnails` in `app_router.dart` with `ThumbnailViewerArgs` | DONE |
-| 3-column grid | aspect-[1/1.4], rounded-lg | DONE |
-| Active page | Primary border + glow shadow | DONE |
-| Bottom jump bar | Page markers + "Jump to..." button | DONE |
+| 3-column grid | aspect-[1/1.4], rounded-lg, page placeholder icons | DONE |
+| Active page | Primary border + glow shadow + highlighted label | DONE |
+| Bottom jump bar | Page markers (P1, P5, P15, P20, End) + "Jump to..." button | DONE |
+| App bar | Close + chapter name + settings + more | DONE |
 
 ---
 
@@ -171,10 +167,10 @@
 
 | Item | Status |
 |------|--------|
-| Page transitions (fade 300ms) | DONE |
-| Page transitions (slide-up) | DONE |
+| Page transitions (fade 300ms for home/history/reader/splash/onboarding) | DONE |
+| Page transitions (slide-up for series/settings/thumbnails) | DONE |
 | All animations use Curves.easeInOut / easeOutCubic | DONE |
-| `flutter analyze` passes with 0 errors | DONE |
+| Global `flutter analyze` passes with 0 errors | DONE |
 
 ---
 
@@ -190,35 +186,84 @@
 | 6 | Series Detail Redesign | DONE |
 | 7 | Reader View Redesign | DONE |
 | 8 | Settings Redesign | DONE |
-| 9 | History Screen | PARTIAL (recent activity broken) |
+| 9 | History Screen | DONE |
 | 10 | Thumbnail Viewer | DONE |
 | 11 | Navigation & Routes | DONE |
 | 12 | Polish & Animation | DONE |
 
-**12 phases COMPLETE (design-wise). Functional bugs documented in ISSUES.md.**
+**All 12 phases COMPLETE.**
 
 ---
 
 ## Design Refinements (Branch: desain)
 
-### App Icon & Branding — DONE
-### Splash Screen — DONE  
-### Onboarding Screen — DONE
-### Home Page Glassmorphism — DONE
-### Settings Bottom Sheet — DONE
-### Series Detail Synopsis & Genres — DONE
-### History Glassmorphism Cards — DONE
+### App Icon & Branding
+| Item | Status |
+|------|--------|
+| `flutter_launcher_icons` installed | DONE |
+| `assets/images/` directory created | DONE |
+| Logo asset copied from `design/omnivousreader_modern_logo/screen.png` | DONE |
+| Android adaptive icon generated (custom comic-book design) | DONE |
+| iOS icon generated (custom OR logo) | DONE |
+| Web favicon + icons generated | DONE |
+| `pubspec.yaml` assets section added | DONE |
 
-### Font Fix (Branch: desain)
-- Removed Google Fonts (Inter/Geist) dependency → system Roboto
-- Fixed gray screen bug caused by `GoogleFonts.getFont('Geist')` exception offline
-- Fixed `GlassBottomNav` Positioned-in-Column cast error
+### Splash Screen
+| Item | Status |
+|------|--------|
+| Logo image replaces text "OR" placeholder | DONE |
+| Scale-in animation on logo (0.8→1.0, easeOutBack) | DONE |
+| Glow pulse animation refined (0.03→0.08 alpha) | DONE |
+| Image.asset with errorBuilder fallback to text | DONE |
 
-### PDF Fit-to-Width Fix (Branch: desain)
-- Default readingMode → vertical (webtoon/AsuraScans style)
-- Default fitMode → fitWidth (fills screen width)
-- SharedPreferences defaults fixed (index 2=vertical, 1=fitWidth)
-- Render resolution 1.5x → 2.0x
+### Onboarding Screen
+| Item | Status |
+|------|--------|
+| Hero illustration using logo background (15% opacity) | DONE |
+| Brand icon uses logo image instead of icon | DONE |
+| Image fade-in animation (separate from text) | DONE |
+| Gradient overlay improved | DONE |
 
-### Current APK: `build\app\outputs\flutter-apk\app-release.apk` (23.1MB)
-### Git: `https://github.com/zaynra/Comic_Viewer.git` — branches: `main`, `desain`
+### Home Page — Glassmorphism
+| Item | Status |
+|------|--------|
+| Top bar: BackdropFilter blur(24, 24) added | DONE |
+| Top bar: semi-transparent surface color (0.8 alpha) | DONE |
+| Top bar: glass border bottom (glassBorderSubtle) | DONE |
+| Logo uses `Image.asset` with errorBuilder fallback | DONE |
+| `dart:ui` import added for ImageFilter | DONE |
+
+### Settings — Bottom Sheet Style
+| Item | Status |
+|------|--------|
+| Converted from full Scaffold to bottom sheet overlay | DONE |
+| Drag handle (48×6, outlineVariant, pill shape) | DONE |
+| Scrim overlay (black 60% alpha, tap to dismiss) | DONE |
+| BackdropFilter blur(40, 40) on sheet background | DONE |
+| Rounded top corners (32px radius) | DONE |
+| Max height 85vh with scroll | DONE |
+| Header: OmnivousReader + SETTINGS + close button | DONE |
+| All sections preserved (Brightness, View Mode, Scroll, Display, Reading, About) | DONE |
+
+### Series Detail — Synopsis & Genres
+| Item | Status |
+|------|--------|
+| `_SynopsisSection` widget added | DONE |
+| Synopsis in glass card (surfaceContainer bg, radiusLg) | DONE |
+| `_GenresSection` widget added | DONE |
+| Genre chips (secondaryContainer bg, pill shape) | DONE |
+| Empty state handling (no description/genres → hidden) | DONE |
+
+### History — Glassmorphism Cards
+| Item | Status |
+|------|--------|
+| `dart:ui` import added | DONE |
+| ClipRRect + BackdropFilter blur(12, 12) on cards | DONE |
+| Container indentation fixed | DONE |
+
+### Verification
+| Item | Status |
+|------|--------|
+| `flutter analyze lib/` — 0 errors | DONE |
+| `flutter pub get` — dependencies resolved | DONE |
+| `dart run flutter_launcher_icons` — icons generated | DONE |

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Series Detail - Immersive Reading</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts for Geist and Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#222a3d",
+                        "surface-tint": "#c0c1ff",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "primary-container": "#8083ff",
+                        "background": "#0b1326",
+                        "tertiary": "#ffb783",
+                        "on-surface": "#dae2fd",
+                        "primary": "#c0c1ff",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary-fixed": "#07006c",
+                        "on-primary-container": "#0d0096",
+                        "on-background": "#dae2fd",
+                        "surface-container-low": "#131b2e",
+                        "secondary-fixed": "#d4e4fa",
+                        "on-tertiary-container": "#452000",
+                        "surface-container": "#171f33",
+                        "secondary-container": "#39485a",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-highest": "#2d3449",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "inverse-on-surface": "#283044",
+                        "surface-dim": "#0b1326",
+                        "on-secondary": "#233143",
+                        "secondary": "#b9c8de",
+                        "outline": "#908fa0",
+                        "inverse-surface": "#dae2fd",
+                        "surface-bright": "#31394d",
+                        "error-container": "#93000a",
+                        "on-secondary-container": "#a7b6cc",
+                        "outline-variant": "#464554",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#c7c4d7",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "primary-fixed": "#e1e0ff",
+                        "on-tertiary-fixed": "#301400",
+                        "surface": "#0b1326",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-tertiary": "#4f2500",
+                        "tertiary-fixed": "#ffdcc5",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "on-primary": "#1000a9",
+                        "surface-variant": "#2d3449",
+                        "inverse-primary": "#494bd6",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "tertiary-container": "#d97721"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "base": "4px",
+                        "safe-margin": "20px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Geist"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-lg": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "30px", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for a premium feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3449; /* surface-variant */
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #464554; /* outline-variant */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen font-body-md text-body-md antialiased overflow-x-hidden">
+<!-- TopAppBar (From JSON) -->
+<!-- Navigation intent is 'Back/Detail', BottomNavBar is suppressed to focus on content canvas -->
+<header class="fixed top-0 left-0 w-full z-50 px-md py-sm flex items-center justify-between bg-surface/70 dark:bg-surface/70 backdrop-blur-xl border-b border-white/10 shadow-sm transition-opacity duration-300 ease-in-out">
+<button class="text-primary dark:text-primary-fixed-dim hover:bg-white/5 p-2 rounded-full flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-xl">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg font-bold text-on-surface truncate px-4">Project_Starlight.pdf • 15/248</h1>
+<button class="text-primary dark:text-primary-fixed-dim hover:bg-white/5 p-2 rounded-full flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-xl">search</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full">
+<!-- Hero Section: Immersive Backdrop -->
+<section class="relative w-full min-h-[530px] md:min-h-[486px] flex items-end pt-24 pb-12 px-4 md:px-12 xl:px-24 overflow-hidden border-b border-white/5">
+<!-- Blurred Background Layer -->
+<div class="absolute inset-0 z-0">
+<div class="w-full h-full bg-cover bg-center bg-no-repeat scale-110 filter blur-[40px] opacity-40" data-alt="A hyper-detailed, high-contrast comic book cover artwork featuring a brooding, stylized vigilante figure perched on a gargoyle in a rain-slicked, neon-lit neo-noir cityscape. The art style is gritty, utilizing deep blacks, stark white highlights, and vibrant crimson accents. The mood is tense, atmospheric, and premium, evoking a sense of dangerous mystery and classic detective fiction within a modern graphic novel aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBy-02qRe3uoxGDQYlE40YxPoqYdQyD18fbHNb0zriMbPTPzasBNk1z46rMLbBo2r0Q_fEidBqQXJuM4ROZ6tSk-HsVaeeDNp7FR_d2zsjaSnMkwadaflEmRGTsNa379J4Kg3zugKank6B6aCX6eJMx3B524e62KGeM-cJ1hEODkYXs_T3hWjxnhUIq-CEabiUxp9TzZgk-_t4aXncPmS-1qGe5geeqOYVvYo8YQO7KTiq2obI7-EuT8dNBiN5nqMoWpccjvv0oUL0')"></div>
+<!-- Gradient Overlay for readability -->
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
+<div class="absolute inset-0 bg-background/30 backdrop-blur-[2px]"></div>
+</div>
+<!-- Foreground Content Grid -->
+<div class="relative z-10 w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-center md:items-end">
+<!-- Crisp Cover Artwork -->
+<div class="w-48 md:w-64 flex-shrink-0 group perspective">
+<img alt="Comic Cover" class="w-full h-auto object-cover rounded-xl shadow-2xl shadow-black/80 border border-white/10 ring-1 ring-primary/20 transition-transform duration-500 group-hover:scale-[1.02] group-hover:rotate-y-2 aspect-[2/3]" data-alt="A hyper-detailed, high-contrast comic book cover artwork featuring a brooding, stylized vigilante figure perched on a gargoyle in a rain-slicked, neon-lit neo-noir cityscape. The art style is gritty, utilizing deep blacks, stark white highlights, and vibrant crimson accents. The mood is tense, atmospheric, and premium, evoking a sense of dangerous mystery and classic detective fiction within a modern graphic novel aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsvBlPZ_bSW5ooCBdnqAnPSvpQGvtIu0guTRH6WiRNpiKbao2-xxp1N5dqg_UmEHKB9PkWztRbWLLYoatrRRulchD4yYrHwFLj1aGIjbCtIfB3X9Tw1RkL5suPfs7Ql3woa9oCmxc74RAJSXST90iyJLPFUDdjfKGNSYdQF38Enb1D3HYv_1QWEh099PTNZzAz0ncCzUkWxANpeUCz_3_Py7hJQjuBiffLuekCqEV0CtKVZWbq6fCjEyHRwI315pkoFvNTY09QOes"/>
+<!-- Status Chip -->
+<div class="absolute top-3 left-3 bg-surface-container-high/90 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg">
+<span class="font-label-md text-label-md text-primary uppercase tracking-wider">New Chapter</span>
+</div>
+</div>
+<!-- Metadata & Actions -->
+<div class="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-3 leading-tight tracking-tight">Batman: Noir Alley</h2>
+<div class="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 mb-6 font-body-md text-body-md text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm opacity-70">draw</span> Writer: Ed Brubaker</span>
+<span class="w-1 h-1 rounded-full bg-surface-variant hidden md:block"></span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm opacity-70">brush</span> Art: Sean Phillips</span>
+<span class="w-1 h-1 rounded-full bg-surface-variant hidden md:block"></span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm opacity-70">calendar_today</span> Ongoing • 2023</span>
+<span class="w-1 h-1 rounded-full bg-surface-variant hidden md:block"></span>
+<span class="flex items-center gap-1 text-tertiary"><span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span> 4.9 (12k)</span>
+</div>
+<div class="flex flex-wrap items-center justify-center md:justify-start gap-4">
+<button class="bg-primary-container text-on-primary-container font-title-lg text-title-lg px-8 py-4 rounded-full flex items-center gap-3 hover:opacity-90 hover:scale-[1.02] transition-all duration-300 shadow-xl shadow-primary-container/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+                            Resume Reading
+                        </button>
+<button class="bg-surface-container text-on-surface p-4 rounded-full border border-white/5 hover:bg-surface-variant transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">bookmark_add</span>
+</button>
+<button class="bg-surface-container text-on-surface p-4 rounded-full border border-white/5 hover:bg-surface-variant transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Content Area: Synopsis & Chapters -->
+<section class="w-full max-w-7xl mx-auto px-4 md:px-12 xl:px-24 py-12">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+<!-- Main Column: Chapter List -->
+<div class="lg:col-span-2 space-y-8">
+<div class="flex items-center justify-between border-b border-surface-variant pb-4">
+<h3 class="font-title-lg text-title-lg text-on-surface">Recent Chapters</h3>
+<button class="font-label-md text-label-md text-primary flex items-center gap-1 hover:text-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-sm">sort</span> Sort
+                        </button>
+</div>
+<!-- Chapter List (Glassmorphism inspired clean rows) -->
+<div class="space-y-3">
+<!-- Chapter Item: Read -->
+<div class="group flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest border border-transparent hover:border-white/5 hover:bg-surface-container-low transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-16 rounded flex-shrink-0 bg-surface-variant overflow-hidden border border-white/10 relative">
+<div class="w-full h-full bg-cover bg-center opacity-50" data-alt="A small, stylized thumbnail image showing a close-up of a detective's shadowy profile under a harsh streetlamp, rendered in high-contrast comic art style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCEDz_MS39Pt9GS-qELC2r_83xEH04EVtv10CEdusdwFHK0reO1y4DDzPuJEn_7IMoHERpot0KeWSDQSs_xL_3wLBx5-A1KAb81WjpPSt3bFuO0sk0QwFIq5D8HsBmEUm0OMjAo9pYdWNBXiAjdJxIVODZgPmnDQKbKra49jEbAZt3Mhv7JWpjYoolUDt8YaxQ5MrOz-2CjiE_qmGsLVOJpw-UhxDX4PAw1NP_Yd0tCEtOiehQfS8hixv2kel2lbowJD4l1JhabcQo')"></div>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg text-on-surface-variant group-hover:text-on-surface transition-colors">Chapter 14: Echoes</h4>
+<span class="font-label-md text-label-md text-surface-tint">Oct 12, 2023 • 24 Pages</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:block text-right">
+<span class="font-label-md text-label-md text-on-surface-variant opacity-70">100%</span>
+<div class="w-24 h-1 bg-surface-variant rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-primary w-full"></div>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-2 rounded-full hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">download_done</span>
+</button>
+</div>
+</div>
+<!-- Chapter Item: In Progress (Active) -->
+<div class="group flex items-center justify-between p-4 rounded-xl bg-surface-container-low border border-primary/20 hover:border-primary/40 transition-all cursor-pointer shadow-lg shadow-black/20">
+<div class="flex items-center gap-4">
+<div class="w-12 h-16 rounded flex-shrink-0 bg-surface-variant overflow-hidden border border-primary/30 relative">
+<div class="w-full h-full bg-cover bg-center" data-alt="A small, stylized thumbnail image showing a rain-splattered window looking out onto a neon cityscape at night, rendered in gritty comic book art style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDVkrZE4Cs6v6U5eaUq0m-35C52KRir42NvrGfs3EWvoi242Apwsxavu1PdyN53NYkEQQnOr-V8Gz--UGgngEooEbOJxGTc-9wKtrcHSxQgIU9MklEu83VfyUMoFo2r0TDzVOAP0QH7Y5GMuL2vNYrQFWCnsJyDgBLLjnMzT2hgdqkcOdoOIKBgejFNwMdEtygDA1JkroZw3TJIxOlOaQ9lcWcCwdawD1uJfe2psUZjx-bzLWY4RlwdnHU6fsnL25yMNfQte7QPSSE')"></div>
+<div class="absolute inset-0 bg-black/20"></div>
+<div class="absolute inset-0 flex items-center justify-center text-white drop-shadow-md">
+<span class="material-symbols-outlined text-3xl opacity-80" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg text-on-surface font-medium">Chapter 15: The Long Fall</h4>
+<span class="font-label-md text-label-md text-surface-tint">Nov 02, 2023 • 32 Pages</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:block text-right">
+<span class="font-label-md text-label-md text-primary opacity-90">15/32</span>
+<div class="w-24 h-1 bg-surface-variant rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-primary w-[45%]"></div>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-2 rounded-full hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<!-- Chapter Item: Unread -->
+<div class="group flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest border border-transparent hover:border-white/5 hover:bg-surface-container-low transition-all cursor-pointer opacity-80 hover:opacity-100">
+<div class="flex items-center gap-4">
+<div class="w-12 h-16 rounded flex-shrink-0 bg-surface-variant flex items-center justify-center border border-white/5 text-on-surface-variant/50">
+<span class="font-label-md text-label-md">#16</span>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg text-on-surface-variant group-hover:text-on-surface transition-colors">Chapter 16: Neon Blood</h4>
+<span class="font-label-md text-label-md text-surface-tint">Dec 01, 2023 • 28 Pages</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-on-surface p-2 rounded-full hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+</div>
+<button class="w-full py-4 text-center font-label-md text-label-md text-primary hover:bg-surface-container/50 rounded-xl transition-colors border border-dashed border-surface-variant hover:border-primary/30">
+                        Load More Chapters
+                    </button>
+</div>
+<!-- Side Column: Info & Tags -->
+<div class="space-y-8">
+<!-- Synopsis -->
+<div class="bg-surface-container-low p-6 rounded-2xl border border-white/5 shadow-md">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-4">Synopsis</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-4">
+                            In a city where the shadows are darker than the night, a new threat emerges from the depths of the criminal underworld. The Dark Knight must navigate a web of corruption, deceit, and classic femme fatales to uncover a conspiracy that threatens to tear Gotham apart from the inside out.
+                        </p>
+<button class="font-label-md text-label-md text-primary uppercase tracking-wider hover:opacity-80 transition-opacity">Read Full Synopsis</button>
+</div>
+<!-- Tags / Genres -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-white/5">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-4">Genres</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1.5 rounded-full bg-surface-variant text-on-surface font-label-md text-label-md cursor-pointer hover:bg-surface-bright transition-colors">Noir</span>
+<span class="px-3 py-1.5 rounded-full bg-surface-variant text-on-surface font-label-md text-label-md cursor-pointer hover:bg-surface-bright transition-colors">Mystery</span>
+<span class="px-3 py-1.5 rounded-full bg-surface-variant text-on-surface font-label-md text-label-md cursor-pointer hover:bg-surface-bright transition-colors">Crime</span>
+<span class="px-3 py-1.5 rounded-full bg-surface-variant text-on-surface font-label-md text-label-md cursor-pointer hover:bg-surface-bright transition-colors">Action</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 import '../../domain/entities/chapter.dart';
 import '../../domain/entities/reading_progress.dart';
@@ -149,4 +152,44 @@ final scanNotifierProvider =
     StateNotifierProvider<ScanNotifier, AsyncValue<ScanResult?>>((ref) {
   final scanner = ref.watch(libraryScannerProvider);
   return ScanNotifier(scanner);
+});
+
+class FolderGroup {
+  const FolderGroup({
+    required this.name,
+    required this.path,
+    required this.series,
+  });
+
+  final String name;
+  final String path;
+  final List<Series> series;
+}
+
+final folderGroupsProvider = FutureProvider<List<FolderGroup>>((ref) async {
+  final seriesAsync = ref.watch(allSeriesProvider);
+  return seriesAsync.when(
+    data: (seriesList) {
+      final Map<String, List<Series>> groups = {};
+      for (final series in seriesList) {
+        final folderPath = p.dirname(series.path);
+        final folderName = p.basename(folderPath);
+        groups.putIfAbsent(folderPath, () => []);
+        groups[folderPath]!.add(series);
+      }
+
+      final result = groups.entries.map((e) {
+        return FolderGroup(
+          name: p.basename(e.key),
+          path: e.key,
+          series: e.value,
+        );
+      }).toList();
+
+      result.sort((a, b) => a.name.compareTo(b.name));
+      return result;
+    },
+    loading: () => <FolderGroup>[],
+    error: (_, __) => <FolderGroup>[],
+  );
 });

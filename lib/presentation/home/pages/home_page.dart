@@ -1,20 +1,20 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:path/path.dart' as p;
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../data/providers/data_providers.dart';
 import '../../../domain/entities/chapter.dart';
-import '../../../domain/entities/reading_progress.dart';
 import '../../../domain/entities/series.dart';
 import '../../../infrastructure/services/library_scanner.dart';
+import '../../shared/widgets/widgets.dart';
 import '../providers/library_folder_providers.dart';
 
 class HomePage extends ConsumerWidget {
@@ -25,61 +25,7 @@ class HomePage extends ConsumerWidget {
     final folderState = ref.watch(libraryFolderNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Comic Viewer'),
-        actions: [
-          folderState.valueOrNull != null
-              ? PopupMenuButton<String>(
-                  icon: const Icon(Symbols.more_vert),
-                  onSelected: (value) async {
-                    if (value == 'refresh') {
-                      final folder = ref.read(libraryFolderNotifierProvider).valueOrNull;
-                      if (folder != null) {
-                        await ref.read(scanNotifierProvider.notifier).scanFolder(folder.path);
-                        ref.invalidate(allSeriesProvider);
-                      }
-                    } else if (value == 'change_folder') {
-                      _showChangeFolderDialog(context, ref);
-                    } else if (value == 'clear_folder') {
-                      await ref.read(libraryFolderNotifierProvider.notifier).clearFolder();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'refresh',
-                      child: Row(
-                        children: [
-                          Icon(Symbols.refresh, size: 20),
-                          SizedBox(width: 8),
-                          Text('Pindai Ulang'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'change_folder',
-                      child: Row(
-                        children: [
-                          Icon(Symbols.folder, size: 20),
-                          SizedBox(width: 8),
-                          Text('Ganti Folder'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'clear_folder',
-                      child: Row(
-                        children: [
-                          Icon(Symbols.delete, size: 20, color: AppColors.error),
-                          SizedBox(width: 8),
-                          Text('Hapus Folder', style: TextStyle(color: AppColors.error)),
-                        ],
-                      ),
-                    ),
-                  ],
-                )
-              : const SizedBox.shrink(),
-        ],
-      ),
+      backgroundColor: AppColors.background,
       body: folderState.when(
         data: (folder) {
           if (folder == null) {
@@ -88,10 +34,11 @@ class HomePage extends ConsumerWidget {
               onManualInput: () => _showManualInputDialog(context, ref),
             );
           }
-          return _LibraryGrid(folderPath: folder.path);
+          return _LibraryView(folderPath: folder.path);
         },
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
         error: (error, _) => _FolderPicker(
           onPick: () => ref.read(libraryFolderNotifierProvider.notifier).pickFolder(context),
           onManualInput: () => _showManualInputDialog(context, ref),
@@ -106,77 +53,30 @@ class HomePage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surfaceContainer,
         title: const Text('Path Folder Manual'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Masukkan path folder komik di emulator:',
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
+              style: const TextStyle(color: AppColors.onSurface),
+              decoration: InputDecoration(
                 hintText: '/sdcard/Comics',
-                border: OutlineInputBorder(),
+                hintStyle: const TextStyle(color: AppColors.outline),
+                filled: true,
+                fillColor: AppColors.surfaceContainerHigh,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderSide: BorderSide.none,
+                ),
               ),
               autofocus: true,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Contoh: /sdcard/Comics',
-              style: TextStyle(fontSize: 11, color: Colors.grey),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final path = controller.text.trim();
-              if (path.isNotEmpty) {
-                Navigator.pop(context);
-                await ref.read(libraryFolderNotifierProvider.notifier).setFolderPath(context, path);
-              }
-            },
-            child: const Text('Buka'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showChangeFolderDialog(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ganti Folder Komik'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Masukkan path folder komik:',
-              style: TextStyle(fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: '/sdcard/Comics',
-                border: OutlineInputBorder(),
-              ),
-              autofocus: true,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Contoh: /sdcard/Comics',
-              style: TextStyle(fontSize: 11, color: Colors.grey),
             ),
           ],
         ),
@@ -212,33 +112,47 @@ class _FolderPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Symbols.folder_open,
-              size: 64,
-              color: AppColors.onSurfaceVariant,
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainer,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.glassBorderSubtle),
+              ),
+              child: const Icon(
+                Icons.folder_open,
+                size: 48,
+                color: AppColors.onSurfaceVariant,
+              ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
+            const SizedBox(height: AppSpacing.lg),
+            const Text(
               'Belum ada folder komik dipilih',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
             ),
             if (errorMessage != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
                 errorMessage!,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                style: const TextStyle(color: AppColors.error, fontSize: 14),
               ),
             ],
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton(
+            const SizedBox(height: AppSpacing.xl),
+            PrimaryButton(
+              label: 'Pilih Folder Komik',
+              icon: Icons.folder,
               onPressed: onPick,
-              child: const Text('Pilih Folder Komik'),
             ),
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
@@ -253,195 +167,464 @@ class _FolderPicker extends StatelessWidget {
   }
 }
 
-class _LibraryGrid extends ConsumerWidget {
-  const _LibraryGrid({required this.folderPath});
+class _LibraryView extends ConsumerStatefulWidget {
+  const _LibraryView({required this.folderPath});
 
   final String folderPath;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final seriesAsync = ref.watch(allSeriesProvider);
-    final recentProgressAsync = ref.watch(recentProgressProvider);
-    final searchQuery = ref.watch(searchQueryProvider);
-    final searchResults = ref.watch(searchResultsProvider);
-    final favoritesAsync = ref.watch(favoriteSeriesProvider);
+  ConsumerState<_LibraryView> createState() => _LibraryViewState();
+}
+
+class _LibraryViewState extends ConsumerState<_LibraryView> {
+  int _selectedTab = 0;
+  final _tabs = ['All Items', 'Folders', 'Recent'];
+
+  @override
+  Widget build(BuildContext context) {
+    final scanState = ref.watch(scanNotifierProvider);
 
     ref.listen<AsyncValue<ScanResult?>>(scanNotifierProvider, (prev, next) {
       if (prev?.value == null && next.value != null) {
         ref.invalidate(allSeriesProvider);
+        ref.invalidate(recentSeriesProvider);
+        ref.invalidate(folderGroupsProvider);
       }
     });
 
-    return Column(
+    return Stack(
       children: [
-        _LibraryHeader(folderPath: folderPath),
-        _SearchBar(),
-        Expanded(
-          child: searchQuery.isNotEmpty
-              ? searchResults.when(
-                  data: (results) {
-                    if (results.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Symbols.search_off,
-                              size: 64,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Text(
-                              'Tidak ada hasil untuk "$searchQuery"',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return _SearchResults(results: results);
-                  },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
-                  error: (e, _) => Center(child: Text('Error: $e')),
-                )
-              : seriesAsync.when(
-                  data: (series) {
-                    if (series.isEmpty) {
-                      return _EmptyLibrary(
-                        onRefresh: () async {
-                          await ref.read(scanNotifierProvider.notifier).scanFolder(folderPath);
-                          ref.invalidate(allSeriesProvider);
-                        },
-                        onGrantPermission: () async {
-                          await openAppSettings();
-                        },
-                      );
-                    }
-                    return CustomScrollView(
-                      slivers: [
-                        recentProgressAsync.when(
-                          data: (progressList) {
-                            if (progressList.isEmpty) {
-                              return const SliverToBoxAdapter();
-                            }
-                            return SliverToBoxAdapter(
-                              child: _ContinueReadingSection(progressList: progressList),
-                            );
-                          },
-                          loading: () => const SliverToBoxAdapter(),
-                          error: (_, __) => const SliverToBoxAdapter(),
-                        ),
-                        favoritesAsync.when(
-                          data: (favorites) {
-                            if (favorites.isEmpty) {
-                              return const SliverToBoxAdapter();
-                            }
-                            return SliverToBoxAdapter(
-                              child: _FavoritesSection(favorites: favorites),
-                            );
-                          },
-                          loading: () => const SliverToBoxAdapter(),
-                          error: (_, __) => const SliverToBoxAdapter(),
-                        ),
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.marginMobile,
-                              AppSpacing.md,
-                              AppSpacing.marginMobile,
-                              AppSpacing.sm,
-                            ),
-                            child: Text(
-                              'Semua Series',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                        ),
-                        SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.marginMobile),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: AppSpacing.gutterMobile,
-                        crossAxisSpacing: AppSpacing.gutterMobile,
-                        childAspectRatio: 0.7,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => _SeriesCard(series: series[index]),
-                        childCount: series.length,
-                      ),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: AppSpacing.marginMobile),
-                  ),
-                ],
-              );
-            },
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+        CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: _GlassTopBar(
+                folderPath: widget.folderPath,
+                scanState: scanState,
+              ),
             ),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            SliverToBoxAdapter(
+              child: _FilterTabs(
+                tabs: _tabs,
+                selectedIndex: _selectedTab,
+                onTap: (index) => setState(() => _selectedTab = index),
+              ),
+            ),
+            if (_selectedTab == 0)
+              _buildAllItemsSliver(ref)
+            else if (_selectedTab == 1)
+              _buildFoldersSliver(ref)
+            else
+              _buildRecentSliver(ref),
+            const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
+          ],
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: GlassBottomNav(
+            currentIndex: 0,
+            onTap: (index) {
+              if (index == 1) context.push('/history');
+              if (index == 2) context.push('/settings');
+            },
+            items: const [
+              GlassBottomNavItem(
+                icon: Icons.grid_view_outlined,
+                activeIcon: Icons.grid_view,
+                label: 'Library',
+              ),
+              GlassBottomNavItem(
+                icon: Icons.history_outlined,
+                activeIcon: Icons.history,
+                label: 'History',
+              ),
+              GlassBottomNavItem(
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings,
+                label: 'Settings',
+              ),
+            ],
           ),
         ),
       ],
     );
   }
+
+  Widget _buildAllItemsSliver(WidgetRef ref) {
+    final seriesAsync = ref.watch(allSeriesProvider);
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
+      ),
+      sliver: seriesAsync.when(
+        data: (series) {
+          if (series.isEmpty) {
+            return SliverToBoxAdapter(
+              child: _EmptyState(
+                onRefresh: () async {
+                  await ref.read(scanNotifierProvider.notifier).scanFolder(widget.folderPath);
+                  ref.invalidate(allSeriesProvider);
+                },
+              ),
+            );
+          }
+          return SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
+              childAspectRatio: 0.62,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _ShelfCard(series: series[index]),
+              childCount: series.length,
+            ),
+          );
+        },
+        loading: () => const SliverToBoxAdapter(
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (e, _) => SliverToBoxAdapter(
+          child: Center(child: Text('Error: $e')),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFoldersSliver(WidgetRef ref) {
+    final folderGroupsAsync = ref.watch(folderGroupsProvider);
+    return folderGroupsAsync.when(
+      data: (folders) {
+        if (folders.isEmpty) {
+          return SliverToBoxAdapter(
+            child: _EmptyState(
+              onRefresh: () async {
+                await ref.read(scanNotifierProvider.notifier).scanFolder(widget.folderPath);
+                ref.invalidate(folderGroupsProvider);
+              },
+            ),
+          );
+        }
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _FolderCard(group: folders[index]),
+            childCount: folders.length,
+          ),
+        );
+      },
+      loading: () => const SliverToBoxAdapter(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      ),
+      error: (e, _) => SliverToBoxAdapter(
+        child: Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Widget _buildRecentSliver(WidgetRef ref) {
+    final recentAsync = ref.watch(recentSeriesProvider);
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
+      ),
+      sliver: recentAsync.when(
+        data: (series) {
+          if (series.isEmpty) {
+            return SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.history_rounded,
+                        size: 48,
+                        color: AppColors.outline,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'No recent activity',
+                        style: AppTextStyles.titleLg.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+          return SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
+              childAspectRatio: 0.62,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _ShelfCard(series: series[index]),
+              childCount: series.length,
+            ),
+          );
+        },
+        loading: () => const SliverToBoxAdapter(
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (e, _) => SliverToBoxAdapter(
+          child: Center(child: Text('Error: $e')),
+        ),
+      ),
+    );
+  }
 }
 
-class _LibraryHeader extends ConsumerWidget {
-  const _LibraryHeader({required this.folderPath});
+class _GlassTopBar extends StatelessWidget {
+  const _GlassTopBar({required this.folderPath, required this.scanState});
 
   final String folderPath;
+  final AsyncValue<ScanResult?> scanState;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scanState = ref.watch(scanNotifierProvider);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.marginMobile,
-        vertical: AppSpacing.sm,
-      ),
-      color: AppColors.surfaceContainerLow,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + AppSpacing.sm,
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            bottom: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.8),
+            border: const Border(
+              bottom: BorderSide(
+                color: AppColors.glassBorderSubtle,
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: Row(
             children: [
-              const Icon(Symbols.folder, size: 16, color: AppColors.primary),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  p.basename(folderPath),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.onSurfaceVariant,
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  child: Image.asset(
+                    'assets/images/or_logo.png',
+                    width: 32,
+                    height: 32,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
                       ),
-                  overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              const Text(
+                'OmnivousReader',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.create_new_folder_outlined,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.search,
+                  color: AppColors.onSurfaceVariant,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          scanState.when(
-            data: (result) {
-              if (result == null) return const SizedBox.shrink();
-              return Text(
-                '${result.seriesCount} series, ${result.chapterCount} chapter',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.outline,
-                    ),
-              );
-            },
-            loading: () => Text(
-              'Memindai...',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.outline,
-                  ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterTabs extends StatelessWidget {
+  const _FilterTabs({
+    required this.tabs,
+    required this.selectedIndex,
+    required this.onTap,
+  });
+
+  final List<String> tabs;
+  final int selectedIndex;
+  final ValueChanged<int> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        itemCount: tabs.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, index) {
+          final isSelected = index == selectedIndex;
+          return GestureDetector(
+            onTap: () => onTap(index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryContainer
+                    : Colors.transparent,
+                borderRadius: AppRadius.pill,
+                border: isSelected
+                    ? null
+                    : Border.all(
+                        color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                        width: 0.5,
+                      ),
+              ),
+              child: Text(
+                tabs[index],
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.05,
+                  color: isSelected
+                      ? AppColors.onPrimaryContainer
+                      : AppColors.onSurfaceVariant,
+                ),
+              ),
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ShelfCard extends ConsumerWidget {
+  const _ShelfCard({required this.series});
+
+  final Series series;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(series.id));
+    final chaptersAsync = ref.watch(chaptersBySeriesProvider(series.id));
+
+    return GestureDetector(
+      onTap: () => context.pushNamed('series_detail', extra: series),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: AppRadius.comic,
+                border: Border.all(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  width: 0.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: AppRadius.comic,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    thumbnailAsync.when(
+                      data: (thumbnail) {
+                        if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+                          return Image.file(
+                            File(thumbnail.filePath),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _PlaceholderCover(),
+                          );
+                        }
+                        return _PlaceholderCover();
+                      },
+                      loading: () => _PlaceholderCover(),
+                      error: (_, __) => _PlaceholderCover(),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: _ProgressBar(chaptersAsync: chaptersAsync),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            series.name,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          chaptersAsync.when(
+            data: (chapters) => Text(
+              '${chapters.length} chapter',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.05,
+                color: AppColors.outline,
+              ),
+            ),
+            loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
           ),
         ],
@@ -450,11 +633,307 @@ class _LibraryHeader extends ConsumerWidget {
   }
 }
 
-class _EmptyLibrary extends StatelessWidget {
-  const _EmptyLibrary({required this.onRefresh, this.onGrantPermission});
+class _FolderCard extends ConsumerWidget {
+  const _FolderCard({required this.group});
+
+  final FolderGroup group;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final firstSeries = group.series.first;
+    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(firstSeries.id));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: GestureDetector(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) => _FolderDetailDialog(group: group),
+          );
+        },
+        child: ClipRRect(
+          borderRadius: AppRadius.radiusLg,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainer.withValues(alpha: 0.5),
+                borderRadius: AppRadius.radiusLg,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      borderRadius: AppRadius.radiusMd,
+                      color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: AppRadius.radiusMd,
+                      child: thumbnailAsync.when(
+                        data: (thumbnail) {
+                          if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+                            return Image.file(
+                              File(thumbnail.filePath),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _buildFolderIcon(),
+                            );
+                          }
+                          return _buildFolderIcon();
+                        },
+                        loading: () => _buildFolderIcon(),
+                        error: (_, __) => _buildFolderIcon(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          group.name,
+                          style: AppTextStyles.titleLg.copyWith(fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${group.series.length} series',
+                          style: AppTextStyles.bodyMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFolderIcon() {
+    return Container(
+      color: AppColors.primaryContainer.withValues(alpha: 0.3),
+      child: const Center(
+        child: Icon(
+          Icons.folder_rounded,
+          color: AppColors.primary,
+          size: 28,
+        ),
+      ),
+    );
+  }
+}
+
+class _FolderDetailDialog extends StatelessWidget {
+  const _FolderDetailDialog({required this.group});
+
+  final FolderGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.surfaceContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.radiusLg,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.glassBorderSubtle,
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.folder_rounded,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      group.name,
+                      style: AppTextStyles.headlineMd,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                itemCount: group.series.length,
+                itemBuilder: (context, index) {
+                  final series = group.series[index];
+                  return _FolderSeriesItem(series: series);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FolderSeriesItem extends ConsumerWidget {
+  const _FolderSeriesItem({required this.series});
+
+  final Series series;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(series.id));
+
+    return ListTile(
+      onTap: () {
+        Navigator.pop(context);
+        context.pushNamed('series_detail', extra: series);
+      },
+      leading: Container(
+        width: 40,
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.radiusSm,
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.radiusSm,
+          child: thumbnailAsync.when(
+            data: (thumbnail) {
+              if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+                return Image.file(
+                  File(thumbnail.filePath),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                );
+              }
+              return _buildPlaceholder();
+            },
+            loading: () => _buildPlaceholder(),
+            error: (_, __) => _buildPlaceholder(),
+          ),
+        ),
+      ),
+      title: Text(
+        series.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: AppColors.surfaceContainerHighest,
+      child: const Center(
+        child: Icon(
+          Icons.auto_stories,
+          color: AppColors.outline,
+          size: 20,
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceholderCover extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surfaceContainerHigh,
+      child: const Center(
+        child: Icon(
+          Icons.auto_stories,
+          size: 48,
+          color: AppColors.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressBar extends StatelessWidget {
+  const _ProgressBar({required this.chaptersAsync});
+
+  final AsyncValue<List<Chapter>> chaptersAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 6,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHighest.withValues(alpha: 0.8),
+      ),
+      child: chaptersAsync.when(
+        data: (chapters) {
+          if (chapters.isEmpty) return const SizedBox.shrink();
+          final readCount = chapters.where((c) => c.isRead).length;
+          final progress = readCount / chapters.length;
+          return FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: progress,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGlow.withValues(alpha: 0.6),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, __) => const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onRefresh});
 
   final VoidCallback onRefresh;
-  final VoidCallback? onGrantPermission;
 
   @override
   Widget build(BuildContext context) {
@@ -462,461 +941,44 @@ class _EmptyLibrary extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Symbols.library_music,
-            size: 64,
-            color: AppColors.onSurfaceVariant,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Tidak ada series ditemukan',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Pastikan folder berisi file PDF',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.glassBorderSubtle),
+            ),
+            child: const Icon(
+              Icons.auto_stories,
+              size: 48,
+              color: AppColors.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          FilledButton.tonal(
+          const Text(
+            'Tidak ada series ditemukan',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          const Text(
+            'Pastikan folder berisi file PDF',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          PrimaryButton(
+            label: 'Pindai Ulang',
+            icon: Icons.refresh,
             onPressed: onRefresh,
-            child: const Text('Pindai Ulang'),
           ),
-          if (onGrantPermission != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: onGrantPermission,
-              icon: const Icon(Symbols.settings, size: 18),
-              label: const Text('Buka Pengaturan Izin'),
-            ),
-          ],
         ],
-      ),
-    );
-  }
-}
-
-class _SeriesCard extends ConsumerWidget {
-  const _SeriesCard({required this.series});
-
-  final Series series;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final chaptersAsync = ref.watch(chaptersBySeriesProvider(series.id));
-    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(series.id));
-
-    return GestureDetector(
-      onTap: () {
-        context.pushNamed('series_detail', extra: series);
-      },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: thumbnailAsync.when(
-                data: (thumbnail) {
-                  if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
-                    return Image.file(
-                      File(thumbnail.filePath),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: AppColors.surfaceContainerHigh,
-                          child: const Icon(
-                            Symbols.book,
-                            size: 48,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        );
-                      },
-                    );
-                  }
-                  return Container(
-                    color: AppColors.surfaceContainerHigh,
-                    child: const Icon(
-                      Symbols.book,
-                      size: 48,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  );
-                },
-                loading: () => Container(
-                  color: AppColors.surfaceContainerHigh,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                error: (_, __) => Container(
-                  color: AppColors.surfaceContainerHigh,
-                  child: const Icon(
-                    Symbols.book,
-                    size: 48,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    series.name,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  chaptersAsync.when(
-                    data: (chapters) => Text(
-                      '${chapters.length} chapter',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                    ),
-                    loading: () => const SizedBox(
-                      height: 12,
-                      width: 12,
-                      child: CircularProgressIndicator(strokeWidth: 1),
-                    ),
-                    error: (_, __) => const SizedBox.shrink(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ContinueReadingSection extends ConsumerWidget {
-  const _ContinueReadingSection({required this.progressList});
-
-  final List<ReadingProgress> progressList;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.marginMobile,
-            AppSpacing.md,
-            AppSpacing.marginMobile,
-            AppSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              const Icon(Symbols.history, size: 20, color: AppColors.primary),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Lanjutkan Membaca',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.marginMobile),
-            itemCount: progressList.length,
-            itemBuilder: (context, index) {
-              return _ContinueReadingCard(progress: progressList[index]);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ContinueReadingCard extends ConsumerWidget {
-  const _ContinueReadingCard({required this.progress});
-
-  final ReadingProgress progress;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final chaptersRepo = ref.read(chaptersRepositoryProvider);
-
-    return FutureBuilder<Chapter?>(
-      future: chaptersRepo.getChapterById(progress.chapterId),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data == null) {
-          return const SizedBox.shrink();
-        }
-
-        final chapter = snapshot.data!;
-
-        return GestureDetector(
-          onTap: () {
-            context.pushNamed('reader', extra: chapter);
-          },
-          child: Container(
-            width: 160,
-            margin: const EdgeInsets.only(right: AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(AppRadius.comic),
-              border: Border.all(color: AppColors.chapterCardBorder),
-            ),
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Symbols.book,
-                  size: 32,
-                  color: AppColors.primary,
-                ),
-                const Spacer(),
-                Text(
-                  chapter.name,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Halaman ${progress.currentPage + 1}',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _SearchBar extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.marginMobile,
-        AppSpacing.sm,
-        AppSpacing.marginMobile,
-        AppSpacing.sm,
-      ),
-      child: TextField(
-        onChanged: (value) {
-          ref.read(searchQueryProvider.notifier).state = value;
-        },
-        decoration: InputDecoration(
-          hintText: 'Cari series...',
-          prefixIcon: const Icon(Symbols.search, color: AppColors.onSurfaceVariant),
-          suffixIcon: ref.watch(searchQueryProvider).isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Symbols.close, color: AppColors.onSurfaceVariant),
-                  onPressed: () {
-                    ref.read(searchQueryProvider.notifier).state = '';
-                  },
-                )
-              : null,
-          filled: true,
-          fillColor: AppColors.surfaceContainerHigh,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.full),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchResults extends StatelessWidget {
-  const _SearchResults({required this.results});
-
-  final List<Series> results;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.marginMobile),
-      itemCount: results.length,
-      itemBuilder: (context, index) {
-        final series = results[index];
-        return _SearchResultCard(series: series);
-      },
-    );
-  }
-}
-
-class _SearchResultCard extends ConsumerWidget {
-  const _SearchResultCard({required this.series});
-
-  final Series series;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(series.id));
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: ListTile(
-        leading: thumbnailAsync.when(
-          data: (thumbnail) {
-            if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                child: Image.file(
-                  File(thumbnail.filePath),
-                  width: 48,
-                  height: 48,
-                  fit: BoxFit.cover,
-                ),
-              );
-            }
-            return Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: const Icon(Symbols.book, color: AppColors.onSurfaceVariant),
-            );
-          },
-          loading: () => const SizedBox(
-            width: 48,
-            height: 48,
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          ),
-          error: (_, __) => Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: const Icon(Symbols.book, color: AppColors.onSurfaceVariant),
-          ),
-        ),
-        title: Text(
-          series.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: const Icon(Symbols.chevron_right, color: AppColors.outline),
-        onTap: () {
-          context.pushNamed('series_detail', extra: series);
-        },
-      ),
-    );
-  }
-}
-
-class _FavoritesSection extends StatelessWidget {
-  const _FavoritesSection({required this.favorites});
-
-  final List<Series> favorites;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.marginMobile,
-            AppSpacing.md,
-            AppSpacing.marginMobile,
-            AppSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              const Icon(Symbols.favorite, size: 20, color: AppColors.primary),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Favorites',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.marginMobile),
-            itemCount: favorites.length,
-            itemBuilder: (context, index) {
-              return _FavoriteCard(series: favorites[index]);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FavoriteCard extends ConsumerWidget {
-  const _FavoriteCard({required this.series});
-
-  final Series series;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final thumbnailAsync = ref.watch(thumbnailBySeriesProvider(series.id));
-
-    return GestureDetector(
-      onTap: () {
-        context.pushNamed('series_detail', extra: series);
-      },
-      child: Container(
-        width: 100,
-        margin: const EdgeInsets.only(right: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppRadius.comic),
-          border: Border.all(color: AppColors.chapterCardBorder),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: thumbnailAsync.when(
-          data: (thumbnail) {
-            if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
-              return Image.file(
-                File(thumbnail.filePath),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Symbols.favorite, color: AppColors.primary);
-                },
-              );
-            }
-            return const Icon(Symbols.favorite, color: AppColors.primary);
-          },
-          loading: () => const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          error: (_, __) => const Icon(Symbols.favorite, color: AppColors.primary),
-        ),
       ),
     );
   }

@@ -10,46 +10,36 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # State management / DI
   flutter_riverpod: ^2.5.1
-
-  # Routing
   go_router: ^14.2.0
-
-  # Folder picker (Android SAF under the hood — no storage permission needed)
   file_picker: ^8.1.2
-
-  # Runtime permissions (reserved for later phases: e.g. notifications)
   permission_handler: ^11.3.1
-
-  # Design system fonts (Inter, matches mockup)
   google_fonts: ^6.2.1
-
-  # Material Symbols Outlined icon set (matches mockup icons exactly)
   material_symbols_icons: ^4.2719.3
-
-  # Persist the picked library folder path across app restarts
   shared_preferences: ^2.3.2
-
-  # Local database (SQLite)
   sqflite: ^2.3.0
   path: ^1.8.0
-
-  # PDF rendering
   pdfx: ^2.6.0
-
-  # File system watcher
   watcher: ^1.1.0
-
-  # Keep screen on during reading
   wakelock_plus: ^1.2.1
-
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/or_logo.png"
+  adaptive_icon_background: "#0B1326"
+  adaptive_icon_foreground: "assets/images/or_logo.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/

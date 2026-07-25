@@ -1,75 +1,180 @@
-# OmnivousReader — Update Log
+# Update Plan: Splash Screen + Figma Mockup Implementation
 
-## Last Updated: 2026-07-25 16:45 WIB
-
----
-
-## 2026-07-25: Design System Implementation + PDF Fixes
-
-### Branch: `desain`
-
-#### Design Tokens & Theme
-- Created full Material 3 dark theme with OmnivousReader colors
-- Primary: `#C0C1FF` (lavender blue), Tertiary: `#FFB783` (orange)
-- Background: `#0B1326` (deep navy), Surface hierarchy: `#060E20` → `#2D3449`
-- Glassmorphism tokens: glassBorder, glassBorderSubtle, primaryGlow
-- 4px grid spacing system, radius tokens (sm→full + semantic presets)
-- System Roboto font (removed Google Fonts for offline compatibility)
-
-#### Glassmorphism Components (8 widgets)
-- GlassAppBar, GlassBottomNav, GlassBottomSheet, GlassCard
-- PrimaryButton, ProgressChip, StatusBadge, PageSlider
-- All use BackdropFilter blur + semi-transparent surfaces
-
-#### UI Phases (12/12 complete)
-- Splash: AnimatedBuilder glow pulse, logo image
-- Onboarding: Fade + slide-in animations
-- Home: Glass top bar, filter tabs (UI only), 2-column comic grid
-- Series Detail: Hero header, synopsis, genres, chapter list
-- Reader: Glass top/bottom bars, page slider, settings sheet
-- Settings: Bottom sheet style with all controls
-- History: Glassmorphism cards, time-grouped
-- Thumbnail Viewer: 3-column grid, jump-to-page
-- Routes: 8 routes with custom transitions
-- All pages use consistent design tokens
-
-#### App Icon & Branding
-- flutter_launcher_icons with custom OR logo
-- assets/images/or_logo.png used in splash, onboarding, home
-
-#### PDF Reader Fixes
-- Removed Google Fonts dependency (caused gray screen offline)
-- Changed GlassBottomNav from Positioned to Padding (fixed cast error)
-- Default readingMode: vertical (webtoon scroll style)
-- Default fitMode: fitWidth (fills screen width)
-- SharedPreferences defaults fixed (index 2=vertical, 1=fitWidth)
-- Render resolution increased 1.5x → 2.0x
-
-#### Known Issues (to fix next)
-- Filter tabs: UI only, no filtering logic
-- History: Not tracking reading activity
-- Chapter page count: Shows "0 Pages"
-- Download button: Unnecessary for local files
-- Reader controls: Hidden by default
-- PDF loading: Spinner only, no progressive loading
+## Status: PLANNED
+## Date: 2026-07-25
 
 ---
 
-## 2026-07-24: MVP Implementation (Phases 0-10)
+## Mockup Analysis: Reader Page (PDF Reader)
 
-### All functional features implemented:
-- Phase 0: Skeleton, Riverpod, GoRouter, SAF picker
-- Phase 1: SQLite schema, scanner, natural sort
-- Phase 2: Library grid + Series Detail
-- Phase 3: PDF reader with pdfx, LRU cache
-- Phase 4: Reading progress persistence
-- Phase 5: Chapter navigation (prev/next/auto-next)
-- Phase 6: Cover detection + auto-generate
-- Phase 7: Search, Favorites, Recent
-- Phase 8: File system watcher
-- Phase 9: Settings + error handling
-- Phase 10: Metadata JSON import
+### Color Palette (Design Tokens)
 
-### Post-MVP:
-- Manual path input (SAF bypass)
-- Emulator storage permission workaround (`appops set`)
+| Token | Hex | Keterangan |
+|---|---|---|
+| `background` | `#0B1326` | Deep navy — background utama |
+| `surface` | `#0B1326` | Same as background |
+| `surface-dim` | `#0B1326` | Dimmed surface |
+| `surface-container-lowest` | `#060E20` | Ter gelap |
+| `surface-container-low` | `#131B2E` | Sangat gelap |
+| `surface-container` | `#171F33` | Gelap |
+| `surface-container-high` | `#222A3D` | Medium gelap |
+| `surface-container-highest` | `#2D3449` | Paling terang di container |
+| `surface-bright` | `#31394D` | Bright surface |
+| `primary` | `#C0C1FF` | Lavender blue — aksen utama |
+| `primary-container` | `#8083FF` | Primary lebih gelap |
+| `on-primary` | `#1000A9` | Text di atas primary |
+| `on-surface` | `#DAE2FD` | Text utama (putih kebiruan) |
+| `on-surface-variant` | `#C7C4D7` | Text sekunder |
+| `secondary` | `#B9C8DE` | Secondary text |
+| `secondary-container` | `#39485A` | Container secondary |
+| `tertiary` | `#FFB783` | Orange accent |
+| `tertiary-container` | `#D97721` | Orange lebih gelap |
+| `error` | `#FFB4AB` | Error red |
+| `outline` | `#908FA0` | Border/outline |
+| `outline-variant` | `#464554` | Border variant |
+
+### Typography
+
+| Style | Size | Line Height | Letter Spacing | Weight | Font |
+|---|---|---|---|---|---|
+| `headline-lg` | 28px | 34px | -0.02em | 700 | Inter |
+| `headline-md` | 22px | 28px | - | 600 | Inter |
+| `title-lg` | 18px | 24px | - | 600 | Inter |
+| `body-lg` | 16px | 24px | - | 400 | Inter |
+| `body-md` | 14px | 20px | - | 400 | Inter |
+| `label-md` | 12px | 16px | 0.05em | 500 | Geist |
+
+### Spacing & Radius
+
+| Token | Value |
+|---|---|
+| `xs` | 4px |
+| `sm` | 8px |
+| `md` | 16px |
+| `lg` | 24px |
+| `xl` | 32px |
+| `gutter` | 12px |
+| `safe-margin` | 20px |
+| `radius-lg` | 8px |
+| `radius-xl` | 12px |
+| `radius-2xl` | 16px |
+| `radius-3xl` | 24px |
+| `radius-full` | 9999px |
+
+---
+
+### Reader Page Layout
+
+#### 1. Main Canvas (Reading Area)
+- Full width, full height, scrollable vertically
+- Comic pages: centered, `max-w-4xl` (~896px), `object-contain`
+- Page shadow: `shadow-2xl`
+- Gap antar halaman: `mt-1` (4px)
+- Scrollbar hidden (immersive)
+
+#### 2. Top App Bar
+- **Posisi:** Fixed top, full width, z-50
+- **Background:** `surface-container-highest/80` + `backdrop-blur-xl`
+- **Border:** bottom `white/5`
+- **Padding:** `px-md py-sm` (16px horizontal, 8px vertical)
+- **Layout:**
+  - Kiri: Tombol back (`arrow_back` icon)
+  - Tengah: Logo (32x32 rounded) + Title "OmnivousReader" + Badge counter "15 / 248"
+  - Kanan: Tombol search
+
+#### 3. Scrub Slider (Page Navigation)
+- **Posisi:** Fixed bottom, z-50
+- **Container:** `surface-container-highest/60` + `backdrop-blur-md`
+- **Border:** `white/5`, shadow-lg
+- **Shape:** Rounded full
+- **Max width:** 448px, centered
+- **Padding:** `px-lg py-3` (24px horizontal, 12px vertical)
+- **Margin bottom:** 24px
+- **Layout:**
+  - Kiri: Label nomor halaman saat ini
+  - Tengah: Progress bar (height 8px, rounded, bg surface-container)
+    - Fill: primary color
+    - Handle: 16x16 circle, primary, border 2px surface, glow effect
+  - Kanan: Label total halaman
+
+#### 4. Bottom Nav Bar
+- **Posisi:** Bawah scrub slider
+- **Background:** `surface-container-high/90` + `backdrop-blur-2xl`
+- **Border:** `white/10`, shadow-2xl
+- **Shape:** Rounded full
+- **Max width:** 384px, centered
+- **Padding:** `px-6 py-3` (24px horizontal, 12px vertical)
+- **Gap:** 16px
+- **Buttons:**
+  - Prev (`skip_previous`)
+  - Next (`skip_next`)
+  - Settings (`settings`)
+  - More (`more_horiz`)
+  - Each: p-12, rounded-full, text on-surface-variant
+  - Hover: text-primary, bg-white/5, icon scale-110
+
+#### 5. Behavior
+- Tap canvas → toggle UI visibility (300ms fade transition)
+- UI visible by default
+- Hide/show: opacity transition
+
+---
+
+## Perbedaan dengan Implementasi Saat Ini
+
+| Aspek | Mockup | Implementasi Sekarang |
+|---|---|---|
+| **Warna background** | `#0B1326` (navy) | `#131313` (hitam) |
+| **Warna primary** | `#C0C1FF` (lavender) | `#CFBCFF` (hampir sama) |
+| **Top bar** | Glassmorphism blur | Gradient hitam |
+| **Bottom bar** | Rounded pill nav | Linear gradient + row |
+| **Scrub slider** | Floating pill container | Inline slider |
+| **Page counter** | Badge di top bar | Label di slider |
+| **Nav buttons** | 4 tombol (Prev, Next, Settings, More) | 5 tombol (skip_prev, prev, slider, next, skip_next) |
+| **Blur effects** | backdrop-blur-xl/2xl | Tidak ada |
+| **Shadow** | shadow-lg/2xl | Tidak ada |
+| **Border** | white/5, white/10 | Tidak ada |
+| **Icon style** | Material Symbols Outlined | Material Symbols (sama) |
+| **Logo di top bar** | Ada (32x32 rounded) | Tidak ada |
+
+---
+
+## Rencana Implementasi
+
+### Phase A: Update Design Tokens
+1. Update `app_colors.dart` — mapping warna baru dari mockup
+2. Update `app_spacing.dart` — sesuaikan spacing tokens
+3. Update `app_radius.dart` — tambah radius tokens
+4. Update `app_theme.dart` — gunakan warna baru
+
+### Phase B: Redesign Reader Page
+1. Top bar — glassmorphism style, logo, badge counter
+2. Scrub slider — floating pill container
+3. Bottom nav — rounded pill dengan 4 tombol
+4. Tap zones — sesuaikan dengan layout baru
+5. Transition animations — fade in/out 300ms
+
+### Phase C: Update Other Pages (menunggu mockup lain)
+1. Home page — sesuaikan dengan mockup
+2. Series detail — sesuaikan dengan mockup
+3. Settings — sesuaikan dengan mockup
+
+---
+
+## Yang Menunggu dari User
+
+| Item | Status |
+|---|---|
+| Figma link (lainnya) | **MENUNGGU** — halaman home, series detail, settings |
+| Splash logo | **MENUNGGU** |
+| Konfirmasi warna | Apakah `#0B1326` (navy) atau tetap `#131313` (hitam)? |
+
+---
+
+## Execution Order
+1. Tunggu semua mockup dari user
+2. Document semua findings di `update.md`
+3. Phase A: Update design tokens
+4. Phase B: Redesign reader page
+5. Phase C: Update other pages
+6. Phase D: Splash screen (setelah logo diterima)

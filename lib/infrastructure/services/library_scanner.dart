@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:developer' as developer;
 
 import 'package:path/path.dart' as p;
+import 'package:pdfx/pdfx.dart';
 
 import '../../domain/entities/chapter.dart';
 import '../../domain/entities/series.dart';
@@ -116,12 +117,14 @@ class LibraryScanner {
 
       var chapter = await _chaptersRepository.getChapterByFilePath(filePath);
       if (chapter == null) {
+        final totalPages = await _getPdfPageCount(filePath);
         chapter = Chapter(
           id: 0,
           seriesId: series.id,
           name: chapterName,
           filePath: filePath,
           sortOrder: chapterOrder > 0 ? chapterOrder : order,
+          totalPages: totalPages,
         );
         await _chaptersRepository.insertChapter(chapter);
       } else {
@@ -159,12 +162,14 @@ class LibraryScanner {
 
     var chapter = await _chaptersRepository.getChapterByFilePath(pdfFile.path);
     if (chapter == null) {
+      final totalPages = await _getPdfPageCount(pdfFile.path);
       chapter = Chapter(
         id: 0,
         seriesId: series.id,
         name: chapterName,
         filePath: pdfFile.path,
         sortOrder: 1,
+        totalPages: totalPages,
       );
       await _chaptersRepository.insertChapter(chapter);
     }
@@ -218,6 +223,17 @@ class LibraryScanner {
     }
 
     return nameA.compareTo(nameB);
+  }
+
+  Future<int> _getPdfPageCount(String filePath) async {
+    try {
+      final doc = await PdfDocument.openFile(filePath);
+      final count = doc.pagesCount;
+      await doc.close();
+      return count;
+    } catch (e) {
+      return 0;
+    }
   }
 }
 

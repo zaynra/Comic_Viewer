@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OmnivousReader - My Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@500&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "surface-container": "#171f33",
+                "on-secondary-container": "#a7b6cc",
+                "secondary": "#b9c8de",
+                "inverse-surface": "#dae2fd",
+                "outline": "#908fa0",
+                "inverse-on-surface": "#283044",
+                "surface-container-lowest": "#060e20",
+                "secondary-fixed-dim": "#b9c8de",
+                "on-tertiary-fixed-variant": "#703700",
+                "background": "#0b1326",
+                "on-tertiary-fixed": "#301400",
+                "on-primary": "#1000a9",
+                "primary-fixed": "#e1e0ff",
+                "surface-bright": "#31394d",
+                "tertiary-container": "#d97721",
+                "on-primary-fixed": "#07006c",
+                "surface-container-high": "#222a3d",
+                "surface-tint": "#c0c1ff",
+                "tertiary-fixed-dim": "#ffb783",
+                "on-secondary-fixed": "#0d1c2d",
+                "tertiary-fixed": "#ffdcc5",
+                "primary": "#c0c1ff",
+                "outline-variant": "#464554",
+                "tertiary": "#ffb783",
+                "on-surface-variant": "#c7c4d7",
+                "on-secondary": "#233143",
+                "error-container": "#93000a",
+                "surface": "#0b1326",
+                "primary-fixed-dim": "#c0c1ff",
+                "surface-container-highest": "#2d3449",
+                "on-background": "#dae2fd",
+                "on-secondary-fixed-variant": "#39485a",
+                "surface-container-low": "#131b2e",
+                "on-error": "#690005",
+                "secondary-container": "#39485a",
+                "primary-container": "#8083ff",
+                "on-tertiary": "#4f2500",
+                "on-primary-container": "#0d0096",
+                "inverse-primary": "#494bd6",
+                "error": "#ffb4ab",
+                "surface-variant": "#2d3449",
+                "surface-dim": "#0b1326",
+                "on-error-container": "#ffdad6",
+                "on-surface": "#dae2fd",
+                "on-primary-fixed-variant": "#2f2ebe",
+                "secondary-fixed": "#d4e4fa",
+                "on-tertiary-container": "#452000"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "safe-margin": "20px",
+                "gutter": "12px",
+                "sm": "8px",
+                "xs": "4px",
+                "md": "16px",
+                "lg": "24px",
+                "base": "4px",
+                "xl": "32px"
+        },
+        "fontFamily": {
+                "label-md": [
+                        "Geist"
+                ],
+                "headline-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Inter"
+                ],
+                "title-lg": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "label-md": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-md": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "30px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "title-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg": [
+                        "28px",
+                        {
+                                "lineHeight": "34px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+        .glass-panel { background: rgba(23, 31, 51, 0.6); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .comic-card-glow { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .comic-card-glow:hover { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px theme('colors.primary/30'); transform: translateY(-4px); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-32 pt-20 hide-scrollbar overflow-x-hidden antialiased bg-background">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 px-md py-sm flex items-center justify-between bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm transition-opacity duration-300 ease-in-out md:px-lg">
+<div class="flex items-center gap-sm">
+<button class="p-2 text-primary hover:bg-white/5 rounded-full transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<div class="flex items-center gap-sm"><img alt="OmnivousReader Logo" class="w-8 h-8 rounded-md object-cover shadow-sm" src="https://lh3.googleusercontent.com/aida/AP1WRLu5sfhQMMj728weCLr9txZ27FCcQgqChoYlZEIiBIIUgwq_MpTPEZLAvdwqcOafMJ5Un4o8yvLmMhgBHw2tMzVaxaL8EjVzBclxDzh3cogiRfZUiIqF9c1RqVPaJgsTTb8mld_ORK2qXqpVAwSYRc-mIzw5klDa2SxaL6PK-zgDIyfVGPuMtu8LU157nWf95j2l2spZd9pDXLpt683dPVu4DVNcvRx6G5hIWOJwKt--gm655T5e6mPh7AY"/><h1 class="font-headline-md text-headline-md font-bold text-on-surface">OmnivousReader</h1></div>
+</div>
+<div class="flex items-center gap-xs">
+<button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-full transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">create_new_folder</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-full transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">search</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="px-md md:px-lg mx-auto max-w-7xl">
+<!-- Filter Tabs -->
+<div class="flex gap-sm overflow-x-auto hide-scrollbar mb-lg mt-sm pb-2">
+<button class="px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md whitespace-nowrap shadow-sm">All Items</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant/50 text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container hover:text-on-surface transition-colors">Folders</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant/50 text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container hover:text-on-surface transition-colors">Recent</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant/50 text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container hover:text-on-surface transition-colors">Favorites</button>
+</div>
+<!-- Grid Layout -->
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-md md:gap-lg">
+<!-- Folder Item 1 -->
+<div class="flex flex-col gap-sm cursor-pointer group">
+<div class="relative aspect-[2/3] rounded-xl bg-surface-container flex flex-col items-center justify-center border border-outline-variant/30 comic-card-glow overflow-hidden shadow-md">
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="material-symbols-outlined text-4xl text-primary/80 mb-2" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-label-md text-label-md text-on-surface-variant">24 Items</span>
+</div>
+<div>
+<h3 class="font-body-md text-body-md text-on-surface font-semibold truncate">Marvel Collection</h3>
+<p class="font-label-md text-label-md text-outline truncate mt-0.5">Updated 2d ago</p>
+</div>
+</div>
+<!-- Folder Item 2 -->
+<div class="flex flex-col gap-sm cursor-pointer group">
+<div class="relative aspect-[2/3] rounded-xl bg-surface-container flex flex-col items-center justify-center border border-outline-variant/30 comic-card-glow overflow-hidden shadow-md">
+<span class="material-symbols-outlined text-4xl text-secondary/80 mb-2" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-label-md text-label-md text-on-surface-variant">12 Items</span>
+</div>
+<div>
+<h3 class="font-body-md text-body-md text-on-surface font-semibold truncate">DC Universe</h3>
+<p class="font-label-md text-label-md text-outline truncate mt-0.5">Updated 1w ago</p>
+</div>
+</div>
+<!-- Comic Series 1 -->
+<div class="flex flex-col gap-sm cursor-pointer group">
+<div class="relative aspect-[2/3] rounded-xl bg-surface-container overflow-hidden border border-outline-variant/30 comic-card-glow shadow-md">
+<img class="w-full h-full object-cover" data-alt="A vivid, dynamic comic book cover featuring Spider-Man swinging through a moody, rain-slicked blue-tinted New York cityscape. The artwork is highly stylized with deep shadows and bright, contrasting neon highlights, perfectly fitting a modern, premium digital comic reader interface. Dark mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3ysgiWHPF7K0SoyLuF-lTEuSdnmoy4ZSFPuqHSNuSO8CjkSmnpp-995__2xPsYM_bISFri8UQTMrr3nM21daf12sMfCTuv5-mlYpa9MyJBmsTqesPC6vQv_yHaizLoAWdsdn4iycjAQXVG_zreg9LMdi-auSFaV1Gtyw7JiLdSjuEGVwj9ER40MutVcVomleIdsRlImc1xBatrVv2f2M2D6uDsOrL2wsMA8YMCLtCZYahHz9cUlMG_N4CQz7iexLyn5yNu0K5Tdc"/>
+<div class="absolute top-2 right-2 bg-surface/90 backdrop-blur-md px-2 py-1 rounded font-label-md text-label-md text-primary font-bold shadow-sm border border-outline-variant/30">NEW</div>
+<div class="absolute bottom-0 left-0 right-0 h-1.5 bg-surface-container-highest/80 backdrop-blur-sm">
+<div class="h-full bg-primary w-1/4 rounded-r-full shadow-[0_0_8px_rgba(192,193,255,0.6)]"></div>
+</div>
+</div>
+<div>
+<h3 class="font-body-md text-body-md text-on-surface font-semibold line-clamp-2 leading-tight">Spider-Man: Blue</h3>
+<p class="font-label-md text-label-md text-outline truncate mt-0.5">Issue #1 of 6</p>
+</div>
+</div>
+<!-- Comic Series 2 -->
+<div class="flex flex-col gap-sm cursor-pointer group">
+<div class="relative aspect-[2/3] rounded-xl bg-surface-container overflow-hidden border border-outline-variant/30 comic-card-glow shadow-md">
+<img class="w-full h-full object-cover" data-alt="A gritty, noir-style comic book cover featuring Batman standing in shadows in a dimly lit alleyway. Muted color palette with deep blacks, grays, and subtle hints of yellow. High-contrast, cinematic lighting fitting a premium, immersive digital library view in a dark-themed application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCt-PAc4OhUxnJmNglYQKLGPC1DZDoX8s87-Har6tl6O4DGoIkEdaiwUpae-kkRIivqK7IxjMc0m18pvYg1QizgaG01MieBLRGGfT6IxaRIhpxWF8ihp2SKusskVZELi_eKp1TBnLzqI1ds_Tj05OZAEi5ehcfrNfs-RSnNYrnO-aF_et-exSqcZ8DPqNn9z0Ga7AGQL9cTI6OFuSqV-TsPecW5faZMm3hKKNsNGTVeV5rjPuQioMHCtX46kV1nqwTo7SYgTyXUu5Q"/>
+<div class="absolute bottom-0 left-0 right-0 h-1.5 bg-surface-container-highest/80 backdrop-blur-sm">
+<div class="h-full bg-primary w-full shadow-[0_0_8px_rgba(192,193,255,0.6)]"></div>
+</div>
+</div>
+<div>
+<h3 class="font-body-md text-body-md text-on-surface font-semibold line-clamp-2 leading-tight">Batman: Year One</h3>
+<p class="font-label-md text-label-md text-primary font-medium truncate mt-0.5">100% Read</p>
+</div>
+</div>
+<!-- Comic Series 3 -->
+<div class="flex flex-col gap-sm cursor-pointer group">
+<div class="relative aspect-[2/3] rounded-xl bg-surface-container overflow-hidden border border-outline-variant/30 comic-card-glow shadow-md">
+<div class="w-full h-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant/40">auto_stories</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-1.5 bg-surface-container-highest/80 backdrop-blur-sm">
+<div class="h-full bg-primary w-[45%] rounded-r-full shadow-[0_0_8px_rgba(192,193,255,0.6)]"></div>
+</div>
+</div>
+<div>
+<h3 class="font-body-md text-body-md text-on-surface font-semibold line-clamp-2 leading-tight">Saga, Vol. 1</h3>
+<p class="font-label-md text-label-md text-outline truncate mt-0.5">45% Read</p>
+</div>
+</div>
+<!-- Add New Placeholder -->
+<div class="flex flex-col gap-sm cursor-pointer group">
+<div class="relative aspect-[2/3] rounded-xl bg-surface-container/20 border-2 border-dashed border-outline-variant/40 flex flex-col items-center justify-center hover:bg-surface-container/50 hover:border-primary/50 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant mb-2 group-hover:text-primary transition-colors">add</span>
+<span class="font-label-md text-label-md text-on-surface-variant group-hover:text-primary transition-colors">Import Files</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 mb-safe-margin mx-4 flex justify-around items-center p-1.5 bg-surface-container/80 backdrop-blur-2xl rounded-full border border-outline-variant/30 shadow-xl md:hidden max-w-md md:mx-auto">
+<button class="flex flex-col items-center justify-center w-12 h-12 bg-primary-container text-on-primary-container rounded-full p-3 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+</button>
+<button class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-full p-3 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">history</span>
+</button>
+<button class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-full p-3 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+</button>
+</nav>
+</body></html>

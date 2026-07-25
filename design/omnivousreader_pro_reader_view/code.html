@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title class="">OmnivousReader - Project Starlight</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Geist:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "surface-container": "#171f33",
+                "on-secondary-container": "#a7b6cc",
+                "secondary": "#b9c8de",
+                "inverse-surface": "#dae2fd",
+                "outline": "#908fa0",
+                "inverse-on-surface": "#283044",
+                "surface-container-lowest": "#060e20",
+                "secondary-fixed-dim": "#b9c8de",
+                "on-tertiary-fixed-variant": "#703700",
+                "background": "#0b1326",
+                "on-tertiary-fixed": "#301400",
+                "on-primary": "#1000a9",
+                "primary-fixed": "#e1e0ff",
+                "surface-bright": "#31394d",
+                "tertiary-container": "#d97721",
+                "on-primary-fixed": "#07006c",
+                "surface-container-high": "#222a3d",
+                "surface-tint": "#c0c1ff",
+                "tertiary-fixed-dim": "#ffb783",
+                "on-secondary-fixed": "#0d1c2d",
+                "tertiary-fixed": "#ffdcc5",
+                "primary": "#c0c1ff",
+                "outline-variant": "#464554",
+                "tertiary": "#ffb783",
+                "on-surface-variant": "#c7c4d7",
+                "on-secondary": "#233143",
+                "error-container": "#93000a",
+                "surface": "#0b1326",
+                "primary-fixed-dim": "#c0c1ff",
+                "surface-container-highest": "#2d3449",
+                "on-background": "#dae2fd",
+                "on-secondary-fixed-variant": "#39485a",
+                "surface-container-low": "#131b2e",
+                "on-error": "#690005",
+                "secondary-container": "#39485a",
+                "primary-container": "#8083ff",
+                "on-tertiary": "#4f2500",
+                "on-primary-container": "#0d0096",
+                "inverse-primary": "#494bd6",
+                "error": "#ffb4ab",
+                "surface-variant": "#2d3449",
+                "surface-dim": "#0b1326",
+                "on-error-container": "#ffdad6",
+                "on-surface": "#dae2fd",
+                "on-primary-fixed-variant": "#2f2ebe",
+                "secondary-fixed": "#d4e4fa",
+                "on-tertiary-container": "#452000"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px",
+                "none": "0",
+                "sm": "0.125rem",
+                "md": "0.375rem",
+                "2xl": "1rem",
+                "3xl": "1.5rem"
+        },
+        "spacing": {
+                "safe-margin": "20px",
+                "gutter": "12px",
+                "sm": "8px",
+                "xs": "4px",
+                "md": "16px",
+                "lg": "24px",
+                "base": "4px",
+                "xl": "32px",
+                "px": "1px",
+                "0": "0",
+                "0.5": "0.125rem",
+                "1": "0.25rem",
+                "1.5": "0.375rem",
+                "2": "0.5rem",
+                "2.5": "0.625rem",
+                "3": "0.75rem",
+                "3.5": "0.875rem",
+                "4": "1rem",
+                "5": "1.25rem",
+                "6": "1.5rem",
+                "7": "1.75rem",
+                "8": "2rem",
+                "9": "2.25rem",
+                "10": "2.5rem",
+                "11": "2.75rem",
+                "12": "3rem",
+                "14": "3.5rem",
+                "16": "4rem",
+                "20": "5rem",
+                "24": "6rem",
+                "28": "7rem",
+                "32": "8rem",
+                "36": "9rem",
+                "40": "10rem",
+                "44": "11rem",
+                "48": "12rem",
+                "52": "13rem",
+                "56": "14rem",
+                "60": "15rem",
+                "64": "16rem",
+                "72": "18rem",
+                "80": "20rem",
+                "96": "24rem"
+        },
+        "fontFamily": {
+                "label-md": [
+                        "Geist"
+                ],
+                "headline-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Inter"
+                ],
+                "title-lg": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "label-md": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-md": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "30px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "title-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg": [
+                        "28px",
+                        {
+                                "lineHeight": "34px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Hide scrollbar for immersive reading */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        * {
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-[#060e20] text-on-background min-h-screen relative overflow-hidden select-none">
+<!-- The Canvas (Reading Material) -->
+<main class="w-full h-screen overflow-y-auto" id="reader-canvas">
+<div class="w-full flex flex-col items-center justify-start min-h-[200vh]">
+<!-- Comic Page Image -->
+<img alt="Comic Page" class="w-full max-w-4xl object-contain shadow-2xl pointer-events-none block" data-alt="A highly detailed full page from a futuristic sci-fi graphic novel. The art features deep space scenes with glowing neon blues, bright stark whites, and shadowy blacks, matching a dark mode high-contrast aesthetic. It shows sleek starships and a mysterious celestial body. The illustration is incredibly sharp, cinematic, and professional, rendered edge-to-edge as if viewed on a high-end digital tablet." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-Yb3vyuN9Yr4tIH1nZRA_3pUB2SZaC51pi5kryuqeZBmOPMknejOkKebfGbYwvVY2xGMv5W2VUkVa_VQ9t0wXJSZDqdmrv822by9UMHCYOj5Tr9JgM1ryDLCEYhaM_vGoS0tlFI3kgrSakLRBUxRRvtOtSYvBKNF1csSjQ7EfyFAcge_Sy4DRTeYocuS2MMmdLvU3mT82XcHiox72xDHbZLeI8wQQFmthk54SBaLvk_zYtYKnv9jNykVRqg5_0A7LiDx9YxmAqA4"/>
+<!-- Simulated next page peeking -->
+<img alt="Comic Page" class="w-full max-w-4xl object-contain shadow-2xl pointer-events-none block mt-1" data-alt="The subsequent highly detailed page of a futuristic sci-fi graphic novel. Continuing the dark mode aesthetic with deep shadows and striking luminous highlights. It depicts a dramatic character scene inside a starship cockpit with glowing holographic interfaces in icy blue and soft white tones. Cinematic composition, professional comic book inking and coloring." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPTmZI4kUDxJ917b0BEUocKklUdNaga_AgHrxQYlXEdoDx0MmNHwIo_mCk9dxiJ7K-vjl1Cu8g8BRRRitZ8CbPg9zPUpmn5GXqNQdekjwMOifkwdzgl4s3A-8deU4HxH1ctVD78mNfauqe9qE6dh9p0TjbeOZlzL3fTlQWOZ3q3VqkuUWGBe6GptRtwdlZ6deUu694eAgTYqr9bJEGpjJsWBkInADdxSGSd9q3uJQkALSAcmRb3eqS2A1cmWJbo_5xKYPVoTkHZtY"/>
+</div>
+</main>
+<!-- UI Overlays (Level 1) -->
+<div class="absolute inset-0 pointer-events-none transition-opacity duration-300 ease-in-out" id="ui-overlay">
+<!-- Top App Bar -->
+<header class="pointer-events-auto fixed top-0 left-0 w-full z-50 px-md py-sm flex items-center justify-between bg-surface-container-highest/80 backdrop-blur-xl border-b border-white/5 shadow-sm transition-opacity duration-300 ease-in-out">
+<button class="text-on-surface hover:bg-white/10 rounded-full p-2 transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex items-center justify-center text-center flex-row gap-2">
+<img alt="OmnivousReader Logo" class="w-8 h-8 object-contain rounded-md" src="https://lh3.googleusercontent.com/aida/AP1WRLu5sfhQMMj728weCLr9txZ27FCcQgqChoYlZEIiBIIUgwq_MpTPEZLAvdwqcOafMJ5Un4o8yvLmMhgBHw2tMzVaxaL8EjVzBclxDzh3cogiRfZUiIqF9c1RqVPaJgsTTb8mld_ORK2qXqpVAwSYRc-mIzw5klDa2SxaL6PK-zgDIyfVGPuMtu8LU157nWf95j2l2spZd9pDXLpt683dPVu4DVNcvRx6G5hIWOJwKt--gm655T5e6mPh7AY"/><h1 class="font-title-lg text-title-lg font-semibold text-on-surface truncate max-w-[200px] md:max-w-md">OmnivousReader</h1>
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-md ml-2">15 / 248</span>
+</div>
+<button class="text-on-surface hover:bg-white/10 rounded-full p-2 transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+</header>
+<!-- Progress Slider & Bottom Nav Area -->
+<div class="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center w-full pb-safe-margin pointer-events-auto">
+<!-- Scrub Slider -->
+<div class="w-full max-w-md px-lg mb-6 flex items-center gap-4 bg-surface-container-highest/60 backdrop-blur-md py-3 rounded-full border border-white/5 shadow-lg mx-4">
+<span class="font-label-md text-label-md text-on-surface-variant w-8 text-right">1</span>
+<div class="flex-grow h-2 bg-surface-container rounded-full relative cursor-pointer group">
+<!-- Progress Fill -->
+<div class="absolute left-0 top-0 h-full bg-primary rounded-full group-hover:bg-primary-fixed transition-colors" style="width: 6%;"></div>
+<!-- Handle -->
+<div class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary group-hover:bg-primary-fixed group-hover:scale-125 transition-all rounded-full shadow-[0_0_10px_rgba(192,193,255,0.5)] border-2 border-surface" style="left: 6%;"></div>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant w-8">248</span>
+</div>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container-high/90 backdrop-blur-2xl rounded-full mb-lg border border-white/10 shadow-2xl flex justify-around items-center px-6 py-3 mx-auto w-full max-w-sm gap-4">
+<button class="text-on-surface-variant hover:text-primary hover:bg-white/5 p-3 transition-all rounded-full flex flex-col items-center justify-center gap-1 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">skip_previous</span>
+<span class="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 bg-surface-container-highest px-2 py-1 rounded">Prev</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-white/5 p-3 transition-all rounded-full flex flex-col items-center justify-center gap-1 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">skip_next</span>
+<span class="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 bg-surface-container-highest px-2 py-1 rounded">Next</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-white/5 p-3 transition-all rounded-full flex flex-col items-center justify-center gap-1 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
+<span class="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 bg-surface-container-highest px-2 py-1 rounded">Settings</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-white/5 p-3 transition-all rounded-full flex flex-col items-center justify-center gap-1 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">more_horiz</span>
+<span class="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 bg-surface-container-highest px-2 py-1 rounded">More</span>
+</button>
+</nav>
+</div>
+</div>
+<script>
+        // Simple tap to toggle UI visibility
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('reader-canvas');
+            const uiOverlay = document.getElementById('ui-overlay');
+            let uiVisible = true;
+
+            canvas.addEventListener('click', (e) => {
+                // Don't toggle if clicking on interactive elements (though currently canvas is behind pointer-events-none overlay)
+                uiVisible = !uiVisible;
+                if (uiVisible) {
+                    uiOverlay.classList.remove('opacity-0');
+                } else {
+                    uiOverlay.classList.add('opacity-0');
+                }
+            });
+        });
+    </script>
+</body></html>

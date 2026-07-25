@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Recent Activity - Project Starlight</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@500&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#222a3d",
+                        "surface-tint": "#c0c1ff",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "primary-container": "#8083ff",
+                        "background": "#0b1326",
+                        "tertiary": "#ffb783",
+                        "on-surface": "#dae2fd",
+                        "primary": "#c0c1ff",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary-fixed": "#07006c",
+                        "on-primary-container": "#0d0096",
+                        "on-background": "#dae2fd",
+                        "surface-container-low": "#131b2e",
+                        "secondary-fixed": "#d4e4fa",
+                        "on-tertiary-container": "#452000",
+                        "surface-container": "#171f33",
+                        "secondary-container": "#39485a",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-highest": "#2d3449",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "inverse-on-surface": "#283044",
+                        "surface-dim": "#0b1326",
+                        "on-secondary": "#233143",
+                        "secondary": "#b9c8de",
+                        "outline": "#908fa0",
+                        "inverse-surface": "#dae2fd",
+                        "surface-bright": "#31394d",
+                        "error-container": "#93000a",
+                        "on-secondary-container": "#a7b6cc",
+                        "outline-variant": "#464554",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#c7c4d7",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "primary-fixed": "#e1e0ff",
+                        "on-tertiary-fixed": "#301400",
+                        "surface": "#0b1326",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-tertiary": "#4f2500",
+                        "tertiary-fixed": "#ffdcc5",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "on-primary": "#1000a9",
+                        "surface-variant": "#2d3449",
+                        "inverse-primary": "#494bd6",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "tertiary-container": "#d97721"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "base": "4px",
+                        "safe-margin": "20px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Geist"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-lg": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "30px", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pt-[72px] pb-[100px] md:pb-[24px]">
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 w-full z-50 px-md py-sm flex items-center justify-between bg-surface/70 dark:bg-surface/70 backdrop-blur-xl shadow-sm border-b border-white/10 transition-opacity duration-300 ease-in-out">
+<div class="flex items-center gap-md">
+<button class="hover:bg-white/5 p-2 rounded-full text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Recent Activity</h1>
+</div>
+<button class="hover:bg-white/5 p-2 rounded-full text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">search</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-4xl mx-auto px-md md:px-lg mt-lg space-y-md">
+<!-- Activity Group: Today -->
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface-variant mb-sm px-xs">Today</h2>
+<div class="space-y-xs">
+<!-- List Item 1 -->
+<div class="group bg-surface-container/50 hover:bg-surface-container-high rounded-xl p-md flex items-center gap-md transition-colors duration-200 border border-white/5 cursor-pointer shadow-sm relative overflow-hidden backdrop-blur-sm">
+<!-- Thumbnail -->
+<div class="w-16 h-24 rounded-lg flex-shrink-0 relative overflow-hidden border border-white/10 shadow-lg shadow-black/20">
+<img class="w-full h-full object-cover" data-alt="Comic book cover illustration featuring a cyberpunk city glowing with neon lights in deep blues and magenta, dark mode aesthetic, premium digital art style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCERuX5hRAprwl0Q23EcJFG8FXjjR_WVUOErvBIJp8pVBN7yRDw4nMzWXRP8LLtPJDNuCLNYWz8riLPkyMGWlRmY1XxWtubp36BFK3Ko2BsLRoXAcYz7AbkDw_HSkLsBpjIl7zMsyDcNM1AjUht6LkbvhOCjmDnt4jCKtLnlAk7zwjHJa6oblQM9_Ome5rCvGEzEcICRXfwgviSk6nXnF7e1JY2Z7PAYurQc3TYYHv3hnBc4OnRezgW0GHccPJK9yZ30K9Sirnvk8"/>
+<!-- Subtle inner glow -->
+<div class="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-lg pointer-events-none"></div>
+<div class="absolute top-1 left-1 bg-surface-container/80 backdrop-blur-md rounded px-1.5 py-0.5">
+<span class="font-label-md text-label-md text-on-surface">90%</span>
+</div>
+</div>
+<!-- Content -->
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<h3 class="font-title-lg text-title-lg text-on-surface truncate mb-xs">Neon Genesis: Awakening</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm truncate">Chapter 42 • Read 2 hours ago</p>
+<!-- Progress Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full w-[90%]"></div>
+</div>
+</div>
+<!-- Quick Action -->
+<button class="w-10 h-10 rounded-full bg-primary-container/20 text-primary-fixed-dim flex items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 hover:bg-primary-container/30">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<!-- List Item 2 -->
+<div class="group bg-surface-container/50 hover:bg-surface-container-high rounded-xl p-md flex items-center gap-md transition-colors duration-200 border border-white/5 cursor-pointer shadow-sm relative overflow-hidden backdrop-blur-sm">
+<div class="w-16 h-24 rounded-lg flex-shrink-0 relative overflow-hidden border border-white/10 shadow-lg shadow-black/20">
+<img class="w-full h-full object-cover" data-alt="Minimalist abstract geometric cover art for a science fiction novel, deep space blacks with sharp, glowing white and soft blue accent lines, premium dark UI style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvKGL7l_mKZG_O592zLXD1hxEPhrz-VnGzXgnPNHpGQvu2CmTjcjK2JUrgweQV5ZAdMetlqB6Ff5ZkTkW0hCy_4pfc60ckZL1yldkoNN6uxsEg8IbwaEJRe8rqlL5CHHBE8AXoj9cMNl-PCPhyyb5ACoi0GKpMGQNhKqtKNoOxIXTz50oTALm5yFYtl0oktWkFvUTjbVj5J3m6V7HJkYh7va46XPzjpVQ1tSpqZ07AxLX1gCAJlFVuuT6lTC0GUyBDvufjEKeonK8"/>
+<div class="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-lg pointer-events-none"></div>
+<div class="absolute top-1 left-1 bg-surface-container/80 backdrop-blur-md rounded px-1.5 py-0.5">
+<span class="font-label-md text-label-md text-on-surface">15%</span>
+</div>
+</div>
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<h3 class="font-title-lg text-title-lg text-on-surface truncate mb-xs">Void Walkers</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm truncate">Chapter 3 • Read 5 hours ago</p>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full w-[15%]"></div>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full bg-primary-container/20 text-primary-fixed-dim flex items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 hover:bg-primary-container/30">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Activity Group: Yesterday -->
+<div class="mt-xl">
+<h2 class="font-title-lg text-title-lg text-on-surface-variant mb-sm px-xs">Yesterday</h2>
+<div class="space-y-xs">
+<!-- List Item 3 -->
+<div class="group bg-surface-container/50 hover:bg-surface-container-high rounded-xl p-md flex items-center gap-md transition-colors duration-200 border border-white/5 cursor-pointer shadow-sm relative overflow-hidden backdrop-blur-sm">
+<div class="w-16 h-24 rounded-lg flex-shrink-0 relative overflow-hidden border border-white/10 shadow-lg shadow-black/20">
+<img class="w-full h-full object-cover" data-alt="High fantasy comic cover showing a glowing ancient sword resting against a dark, mossy stone in a shadowed forest, rich deep greens and subtle glowing blues, cinematic lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPkMOfB8q0IeafLWjltEm_O-pDLp-9EfjUu1n90Gq6vAUf-p3wy4blb7cOfSGRVVmhGEkP-vfCAGFKJdT1y5MBGPBVOF19UsvXD9hay7w5enWh1DMfDXk_ndUwk8Zcek0TRV9ps5QuYcwctaeqnASSkYVsmqbgdXaw7WJKS5DBqzqlhPY7-xUCXNc2CNuH3zN1V2cEhBC7_gmeGUsiqQtWZajz7S0DDqsPnQFr3MbOU1WLLoZJuHN47Ck01dEHj2jF1gwuiZWsm_c"/>
+<div class="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-lg pointer-events-none"></div>
+<div class="absolute top-1 left-1 bg-surface-container/80 backdrop-blur-md rounded px-1.5 py-0.5">
+<span class="font-label-md text-label-md text-tertiary">New</span>
+</div>
+</div>
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<h3 class="font-title-lg text-title-lg text-on-surface truncate mb-xs">Echoes of the Ancients</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm truncate">Volume 1 • Read Yesterday</p>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full w-[0%]"></div>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full bg-primary-container/20 text-primary-fixed-dim flex items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 hover:bg-primary-container/30">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Nav Bar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 mb-safe-margin flex justify-around items-center p-2 mx-auto max-w-md bg-surface-container/80 dark:bg-surface-container/80 backdrop-blur-2xl rounded-full shadow-xl shadow-indigo-900/20 border-t-0 border border-white/10 mx-xl mb-xl scale-95">
+<a class="text-on-surface-variant p-3 hover:scale-110 active:transition-transform flex items-center justify-center rounded-full" href="#">
+<span class="material-symbols-outlined text-label-md font-label-md">first_page</span>
+</a>
+<a class="text-on-surface-variant p-3 hover:scale-110 active:transition-transform flex items-center justify-center rounded-full" href="#">
+<span class="material-symbols-outlined text-label-md font-label-md">chevron_left</span>
+</a>
+<a class="bg-secondary-container text-on-secondary-container rounded-full p-3 hover:scale-110 active:transition-transform flex items-center justify-center" href="#">
+<span class="material-symbols-outlined text-label-md font-label-md">grid_view</span>
+</a>
+<a class="text-on-surface-variant p-3 hover:scale-110 active:transition-transform flex items-center justify-center rounded-full" href="#">
+<span class="material-symbols-outlined text-label-md font-label-md">chevron_right</span>
+</a>
+<a class="text-on-surface-variant p-3 hover:scale-110 active:transition-transform flex items-center justify-center rounded-full" href="#">
+<span class="material-symbols-outlined text-label-md font-label-md">last_page</span>
+</a>
+</nav>
+</body></html>
