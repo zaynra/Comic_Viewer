@@ -79,6 +79,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       await _prefetchNext();
 
       await ref.read(recentRepositoryProvider).addRecent(widget.chapter.seriesId);
+      await _saveProgress();
       ref.invalidate(historyProvider);
 
       setState(() {
@@ -1126,7 +1127,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
             ),
 
           // Bottom Controls (Glassmorphism)
-          if (_showControls && settings.readingMode != ReadingMode.vertical)
+          if (_showControls)
             Positioned(
               bottom: 0,
               left: 0,
