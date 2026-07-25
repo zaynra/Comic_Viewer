@@ -394,6 +394,139 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
   }
 
+  void _showChaptersSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.85,
+          builder: (context, scrollController) {
+            return ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHigh.withValues(alpha: 0.95),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    border: const Border(
+                      top: BorderSide(color: AppColors.glassBorderSubtle, width: 0.5),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // Handle
+                      Container(
+                        margin: const EdgeInsets.only(top: 12),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.outlineVariant,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      // Header
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.format_list_bulleted,
+                              color: AppColors.primary,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Chapters (${_siblingChapters.length})',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurface,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.close_rounded, size: 22),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: AppColors.glassBorderSubtle),
+                      // Chapter list
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _siblingChapters.length,
+                          itemBuilder: (context, index) {
+                            final chapter = _siblingChapters[index];
+                            final isCurrent = index == _currentChapterIndex;
+                            return ListTile(
+                              onTap: () {
+                                Navigator.pop(context);
+                                if (index != _currentChapterIndex) {
+                                  context.pushReplacementNamed('reader', extra: chapter);
+                                }
+                              },
+                              leading: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: isCurrent
+                                      ? AppColors.primary.withValues(alpha: 0.2)
+                                      : AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: isCurrent
+                                          ? AppColors.primary
+                                          : AppColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                chapter.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
+                                  color: isCurrent
+                                      ? AppColors.primary
+                                      : AppColors.onSurface,
+                                ),
+                              ),
+                              trailing: isCurrent
+                                  ? const Icon(Icons.play_circle_fill_rounded,
+                                      color: AppColors.primary, size: 20)
+                                  : null,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showSettingsSheet() {
     final settings = ref.read(settingsProvider);
     double brightness = settings.readingBrightness;
@@ -1258,9 +1391,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                 onPressed: _hasPreviousChapter ? _goToPreviousChapter : null,
                               ),
                               _ReaderNavButton(
-                                icon: Icons.skip_next,
-                                label: 'Next',
-                                onPressed: _hasNextChapter ? _goToNextChapter : null,
+                                icon: Icons.format_list_bulleted,
+                                label: 'Chapters',
+                                onPressed: _showChaptersSheet,
                               ),
                               _ReaderNavButton(
                                 icon: Icons.settings,
@@ -1268,9 +1401,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                 onPressed: _showSettingsSheet,
                               ),
                               _ReaderNavButton(
-                                icon: Icons.more_horiz,
-                                label: 'More',
-                                onPressed: () {},
+                                icon: Icons.skip_next,
+                                label: 'Next',
+                                onPressed: _hasNextChapter ? _goToNextChapter : null,
                               ),
                             ],
                           ),

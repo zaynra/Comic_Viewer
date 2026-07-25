@@ -73,14 +73,14 @@ class PdfRenderer {
     try {
       final page = await _document!.getPage(index + 1);
 
-      final renderWidth = (page.width * 1.5).roundToDouble();
-      final renderHeight = (page.height * 1.5).roundToDouble();
+      final renderWidth = (page.width * 2.0).roundToDouble();
+      final renderHeight = (page.height * 2.0).roundToDouble();
 
       final pageImage = await page.render(
         width: renderWidth,
         height: renderHeight,
         format: PdfPageImageFormat.jpeg,
-        quality: 85,
+        quality: 90,
       );
 
       await page.close();
