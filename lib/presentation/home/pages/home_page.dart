@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -178,7 +179,8 @@ class _LibraryView extends ConsumerStatefulWidget {
 
 class _LibraryViewState extends ConsumerState<_LibraryView> {
   int _selectedTab = 0;
-  final _tabs = ['All Items', 'Folders', 'Recent'];
+  bool _vaultUnlocked = false;
+  final _tabs = ['All Items', 'Folders', 'Recent', 'Vault'];
 
   @override
   Widget build(BuildContext context) {
@@ -200,21 +202,30 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
               child: _GlassTopBar(
                 folderPath: widget.folderPath,
                 scanState: scanState,
+                onAddFolder: () => _addFolderToLibrary(ref),
               ),
             ),
             SliverToBoxAdapter(
               child: _FilterTabs(
                 tabs: _tabs,
                 selectedIndex: _selectedTab,
-                onTap: (index) => setState(() => _selectedTab = index),
+                onTap: (index) {
+                  if (index == 3 && !_vaultUnlocked) {
+                    _showPinDialog();
+                  } else {
+                    setState(() => _selectedTab = index);
+                  }
+                },
               ),
             ),
             if (_selectedTab == 0)
               _buildAllItemsSliver(ref)
             else if (_selectedTab == 1)
               _buildFoldersSliver(ref)
+            else if (_selectedTab == 2)
+              _buildRecentSliver(ref)
             else
-              _buildRecentSliver(ref),
+              _buildVaultSliver(ref),
             const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
           ],
         ),
@@ -367,6 +378,276 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
         ),
       ),
     );
+  }
+
+  void _showPinDialog() {
+    final controllers = List.generate(4, (_) => TextEditingController());
+    final focusNodes = List.generate(4, (_) => FocusNode());
+    String? error;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: AppColors.surfaceContainer,
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusLg),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline_rounded,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Enter Vault PIN',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Enter 4-digit PIN to access vault',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(4, (i) {
+                        return Container(
+                          width: 52,
+                          height: 56,
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh,
+                            borderRadius: AppRadius.radiusMd,
+                            border: Border.all(
+                              color: error != null
+                                  ? AppColors.error
+                                  : AppColors.outlineVariant.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: TextField(
+                            controller: controllers[i],
+                            focusNode: focusNodes[i],
+                            textAlign: TextAlign.center,
+                            obscureText: true,
+                            keyboardType: TextInputType.number,
+                            maxLength: 1,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurface,
+                            ),
+                            decoration: const InputDecoration(
+                              counterText: '',
+                              border: InputBorder.none,
+                            ),
+                            onChanged: (value) {
+                              if (value.isNotEmpty && i < 3) {
+                                focusNodes[i + 1].requestFocus();
+                              }
+                              if (value.isEmpty && i > 0) {
+                                focusNodes[i - 1].requestFocus();
+                              }
+                              if (controllers.every((c) => c.text.isNotEmpty)) {
+                                final pin = controllers.map((c) => c.text).join();
+                                if (pin == '2305') {
+                                  Navigator.pop(context);
+                                  setState(() {
+                                    _vaultUnlocked = true;
+                                    _selectedTab = 3;
+                                  });
+                                } else {
+                                  setDialogState(() => error = 'Wrong PIN');
+                                  for (final c in controllers) {
+                                    c.clear();
+                                  }
+                                  focusNodes[0].requestFocus();
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      }),
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        error!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.surfaceContainerHigh,
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildVaultSliver(WidgetRef ref) {
+    final vaultedAsync = ref.watch(vaultedSeriesProvider);
+    return vaultedAsync.when(
+      data: (series) {
+        if (series.isEmpty) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainer,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.glassBorderSubtle),
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline_rounded,
+                        size: 48,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const Text(
+                      'Vault is empty',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Text(
+                      'Pick a folder to add comics directly to vault',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    PrimaryButton(
+                      label: 'Pick Folder for Vault',
+                      icon: Icons.folder_open,
+                      onPressed: () => _pickVaultFolder(ref),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+        return SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            0,
+          ),
+          sliver: _ShelfGrid(series: series),
+        );
+      },
+      loading: () => const SliverFillRemaining(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      ),
+      error: (e, _) => SliverFillRemaining(
+        child: Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Future<void> _pickVaultFolder(WidgetRef ref) async {
+    final result = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Pilih folder untuk Vault',
+    );
+    if (result == null) return;
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Scanning folder for vault...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    await ref.read(scanNotifierProvider.notifier).scanFolder(result);
+
+    final repo = ref.read(seriesRepositoryProvider);
+    final allSeries = await repo.getAllSeries();
+    for (final s in allSeries) {
+      if (!s.isVaulted && s.path.startsWith(result)) {
+        await repo.toggleVault(s.id);
+      }
+    }
+    ref.invalidate(vaultedSeriesProvider);
+    ref.invalidate(allSeriesProvider);
+    ref.invalidate(recentSeriesProvider);
+    ref.invalidate(folderGroupsProvider);
+  }
+
+  Future<void> _addFolderToLibrary(WidgetRef ref) async {
+    final result = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Tambah folder komik',
+    );
+    if (result == null) return;
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Scanning new folder...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    await ref.read(scanNotifierProvider.notifier).scanFolder(result);
+    ref.invalidate(allSeriesProvider);
+    ref.invalidate(recentSeriesProvider);
+    ref.invalidate(folderGroupsProvider);
   }
 }
 
@@ -625,10 +906,15 @@ class _PlaceholderCover extends StatelessWidget {
 }
 
 class _GlassTopBar extends StatelessWidget {
-  const _GlassTopBar({required this.folderPath, required this.scanState});
+  const _GlassTopBar({
+    required this.folderPath,
+    required this.scanState,
+    required this.onAddFolder,
+  });
 
   final String folderPath;
   final AsyncValue<ScanResult?> scanState;
+  final VoidCallback onAddFolder;
 
   @override
   Widget build(BuildContext context) {
@@ -691,7 +977,7 @@ class _GlassTopBar extends StatelessWidget {
               ),
               const Spacer(),
               IconButton(
-                onPressed: () {},
+                onPressed: onAddFolder,
                 icon: const Icon(
                   Icons.create_new_folder_outlined,
                   color: AppColors.onSurfaceVariant,

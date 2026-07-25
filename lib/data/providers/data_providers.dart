@@ -72,7 +72,7 @@ final fileWatcherServiceProvider = Provider<FileWatcherService>((ref) {
 
 final allSeriesProvider = FutureProvider<List<Series>>((ref) async {
   final repo = ref.watch(seriesRepositoryProvider);
-  return repo.getAllSeries();
+  return repo.getVisibleSeries();
 });
 
 final chaptersBySeriesProvider =
@@ -152,6 +152,18 @@ final scanNotifierProvider =
     StateNotifierProvider<ScanNotifier, AsyncValue<ScanResult?>>((ref) {
   final scanner = ref.watch(libraryScannerProvider);
   return ScanNotifier(scanner);
+});
+
+final vaultedSeriesProvider = FutureProvider<List<Series>>((ref) async {
+  final repo = ref.watch(seriesRepositoryProvider);
+  return repo.getVaultedSeries();
+});
+
+final isVaultedProvider =
+    FutureProvider.family<bool, int>((ref, seriesId) async {
+  final repo = ref.watch(seriesRepositoryProvider);
+  final series = await repo.getSeriesById(seriesId);
+  return series?.isVaulted ?? false;
 });
 
 class FolderGroup {
