@@ -13,6 +13,28 @@ class SeriesRepositoryImpl implements SeriesRepository {
   }
 
   @override
+  Future<List<Series>> getVisibleSeries() async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'series',
+      where: 'is_vaulted = 0',
+      orderBy: 'name ASC',
+    );
+    return maps.map((map) => Series.fromMap(map)).toList();
+  }
+
+  @override
+  Future<List<Series>> getVaultedSeries() async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'series',
+      where: 'is_vaulted = 1',
+      orderBy: 'name ASC',
+    );
+    return maps.map((map) => Series.fromMap(map)).toList();
+  }
+
+  @override
   Future<Series?> getSeriesById(int id) async {
     final db = await _db.database;
     final maps = await db.query('series', where: 'id = ?', whereArgs: [id]);
@@ -54,5 +76,16 @@ class SeriesRepositoryImpl implements SeriesRepository {
     } else {
       await insertSeries(series);
     }
+  }
+
+  @override
+  Future<void> toggleVault(int seriesId) async {
+    final db = await _db.database;
+    final series = await getSeriesById(seriesId);
+    if (series == null) return;
+    await db.rawUpdate(
+      'UPDATE series SET is_vaulted = ? WHERE id = ?',
+      [series.isVaulted ? 0 : 1, seriesId],
+    );
   }
 }

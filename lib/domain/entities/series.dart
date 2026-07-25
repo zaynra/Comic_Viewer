@@ -7,6 +7,7 @@ class Series {
     this.author,
     this.description,
     this.genres,
+    this.isVaulted = false,
     required this.createdAt,
   });
 
@@ -17,6 +18,7 @@ class Series {
   final String? author;
   final String? description;
   final List<String>? genres;
+  final bool isVaulted;
   final DateTime createdAt;
 
   Series copyWith({
@@ -27,6 +29,7 @@ class Series {
     String? author,
     String? description,
     List<String>? genres,
+    bool? isVaulted,
     DateTime? createdAt,
   }) {
     return Series(
@@ -37,6 +40,7 @@ class Series {
       author: author ?? this.author,
       description: description ?? this.description,
       genres: genres ?? this.genres,
+      isVaulted: isVaulted ?? this.isVaulted,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -50,6 +54,7 @@ class Series {
       'author': author,
       'description': description,
       'genres': genres?.join(','),
+      'is_vaulted': isVaulted ? 1 : 0,
       'created_at': createdAt.millisecondsSinceEpoch,
     };
   }
@@ -63,6 +68,7 @@ class Series {
       author: map['author'] as String?,
       description: map['description'] as String?,
       genres: (map['genres'] as String?)?.split(',').where((g) => g.isNotEmpty).toList(),
+      isVaulted: (map['is_vaulted'] as int? ?? 0) == 1,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
     );
   }
