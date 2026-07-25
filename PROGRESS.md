@@ -1,165 +1,143 @@
 # Comic Viewer - Development Progress
 
-## Current Phase: MVP Complete (Phase 0–10) ✅
+## Current Phase: Design System + Bug Fixes (Branch: desain)
+
+## Last Updated: 2026-07-25 16:45 WIB
 
 ---
 
-## Phase 0 — Skeleton ✅
-**Completed:** 2026-07-24
-
-- Initialized Flutter project with Clean Architecture folder structure
-- Setup Riverpod, GoRouter, dark theme with lavender accent (`#CFBCFF`)
-- SAF folder picker via `file_picker`, SharedPreferences for persistence
-- Fixed NDK version mismatch (upgraded to 27.0.12077973)
-- Generated Android platform files via `flutter create .`
-
----
-
-## Phase 1 — Data Layer & Library Scanner ✅
-**Completed:** 2026-07-24
-
-- SQLite schema: `series`, `chapters`, `library_index`
-- Domain entities, repositories, recursive library scanner
-- Natural sort for chapter names (Chapter_0001 → Chapter_0002)
+## Architecture
+- **Framework:** Flutter 3.29.2
+- **State:** Riverpod
+- **Routing:** GoRouter
+- **DB:** sqflite (SQLite)
+- **PDF:** pdfx (v2.6.0)
+- **Design System:** Custom Material 3 dark theme + Glassmorphism
+- **Font:** System Roboto (removed Google Fonts dependency)
+- **GitHub:** `https://github.com/zaynra/Comic_Viewer.git`
+- **Branches:** `main` (base), `desain` (design + fixes)
 
 ---
 
-## Phase 2 — Library UI + Series Detail ✅
-**Completed:** 2026-07-24
+## Implementation Timeline
 
-- Grid view (2-column) with series name and chapter count
-- Series Detail: hero cover + gradient overlay, chip badges, chapter list
-- Chapter cards show progress bar (in-progress) or check_circle (completed)
-- UI-only "Mulai Baca" + "Baca dari Awal" buttons
+### Phase 0 — Skeleton ✅ (2026-07-24)
+- Flutter project with Clean Architecture
+- Riverpod, GoRouter, dark theme with lavender accent
+- SAF folder picker, SharedPreferences persistence
+- Fixed NDK version mismatch
 
----
+### Phase 1 — Data Layer & Library Scanner ✅ (2026-07-24)
+- SQLite schema: series, chapters, library_index
+- Domain entities, repositories, recursive scanner
+- Natural sort for chapter names
 
-## Phase 2b — Reader UI Shell & Settings UI Shell ✅
-**Completed:** 2026-07-24
+### Phase 2 — Library UI + Series Detail ✅ (2026-07-24)
+- 2-column grid, series name, chapter count
+- Series Detail: hero cover + gradient overlay, chip badges
+- Chapter cards with progress bar / check_circle
 
-- Reader page shell with overlay UI (top bar, bottom controls, slider)
-- Settings page with sections (Tampilan, Membaca, Penyimpanan, Tentang)
+### Phase 2b — Reader UI Shell & Settings UI Shell ✅ (2026-07-24)
+- Reader page shell with overlay UI
+- Settings page with sections
 
----
+### Phase 3 — Reader Core ✅ (2026-07-24)
+- pdfx integration, page-by-page async render
+- LRU cache (5 pages), pinch zoom
+- Tap left/right for page navigation
 
-## Phase 3 — Reader Core ✅
-**Completed:** 2026-07-24
-
-- Integrated `pdfx` for PDF rendering
-- LRU cache (5 pages), page-by-page async render
-- Tap left/right thirds for page navigation, pinch zoom (0.5x–3x)
-- Page slider for quick navigation
-- Error handling for corrupted/missing PDFs
-
----
-
-## Phase 4 — Reading Progress ✅
-**Completed:** 2026-07-24
-
-- `reading_progress` table (chapter_id, current_page, zoom_level)
-- Save/restore progress on page change and dispose
+### Phase 4 — Reading Progress ✅ (2026-07-24)
+- reading_progress table, save/restore on page change
 - "Lanjutkan Membaca" section on HomePage
 
----
+### Phase 5 — Chapter Navigation ✅ (2026-07-24)
+- Prev/Next chapter buttons
+- Auto-next dialog at last page
 
-## Phase 5 — Chapter Navigation ✅
-**Completed:** 2026-07-24
+### Phase 6 — Cover & Thumbnail ✅ (2026-07-24)
+- Custom cover detection + auto-generate from PDF first page
+- Thumbnails table
 
-- Prev/Next chapter buttons (disabled at edges)
-- Auto-next dialog at last page (5-second countdown)
-- Chapter cards in Series Detail open Reader on tap
+### Phase 7 — Search, Favorites, Recent ✅ (2026-07-24)
+- Favorites and recent tables
+- Realtime search, favorites toggle
 
----
+### Phase 8 — Incremental File Monitoring ✅ (2026-07-24)
+- watcher package, debounced change detection
 
-## Phase 6 — Cover & Thumbnail ✅
-**Completed:** 2026-07-24
+### Phase 9 — Settings & Polish ✅ (2026-07-24)
+- Theme mode, reading direction, keep screen on, error handling
 
-- `thumbnails` table (series_id, source, file_path)
-- Custom cover detection (cover.jpg, thumb.png, etc.)
-- Auto-generate from PDF first page (saved to `.thumbnails/`)
-- Thumbnail display in grid and series detail
-
----
-
-## Phase 7 — Search, Favorites, Recent ✅
-**Completed:** 2026-07-24
-
-- `favorites` and `recent` tables
-- Realtime search by series name
-- Favorites toggle with persistence
-- Recent tracking (auto on chapter open)
+### Phase 10 — Metadata JSON Import ✅ (2026-07-24)
+- MetadataParser for JSON metadata
+- Series/chapter metadata parsing
 
 ---
 
-## Phase 8 — Incremental File Monitoring ✅
-**Completed:** 2026-07-24
+## Design System Implementation (Branch: desain) — 2026-07-25
 
-- `watcher` package for file system monitoring
-- Debounced change detection (2-second delay)
-- Auto-add new PDFs, auto-remove deleted PDFs
-- Cleanup empty series after file removal
+### Design Tokens ✅
+- app_colors.dart: 30+ Material 3 color tokens
+- app_spacing.dart: 4px grid system
+- app_radius.dart: Radius tokens + semantic presets
+- app_text_styles.dart: System Roboto (was Inter/Geist)
+- app_theme.dart: Full Material 3 ThemeData
 
----
+### Glassmorphism Components ✅
+- GlassAppBar, GlassBottomNav, GlassBottomSheet, GlassCard
+- PrimaryButton, ProgressChip, StatusBadge, PageSlider
 
-## Phase 9 — Settings & Polish ✅
-**Completed:** 2026-07-24
+### All 12 UI Phases ✅
+- Splash, Onboarding, Home, Series Detail, Reader, Settings
+- History, Thumbnail Viewer, Routes, Animations
 
-- Theme mode selection (Terang/Gelap/Sistem) with persistence
-- Reading direction settings (Kiri ke Kanan/Kanan ke Kiri/Vertikal)
-- Keep screen on toggle
-- Custom `PdfLoadException` for better error handling
-- Retry button and back navigation on PDF load errors
+### App Icon & Branding ✅
+- flutter_launcher_icons with custom OR logo
+- assets/images/or_logo.png
 
----
-
-## Phase 10 — Metadata JSON Import ✅
-**Completed:** 2026-07-24
-
-- `MetadataParser` service for JSON metadata parsing
-- Series metadata: title, author, artist, description, genres, language, year
-- Chapter metadata: title, volume, chapter, language, pages
-- Auto-parse `metadata.json` in series folder
-- Auto-parse `Chapter_XXXX.json` for individual chapters
-- Database schema v5: added author, description, genres columns to series
+### Design Refinements ✅
+- Glassmorphism on home top bar, history cards
+- Settings bottom sheet style
+- Synopsis + genres in series detail
 
 ---
 
-## Post-MVP Fixes
+## PDF Reader Fixes (Branch: desain) — 2026-07-25
 
-### Manual Path Input (SAF Bypass)
-**Completed:** 2026-07-24
+### Gray Screen Fix ✅
+- Removed Google Fonts (Inter/Geist) → system Roboto
+- Fixed `GoogleFonts.getFont('Geist')` offline exception
 
-**Issue:** Android 11+ SAF (Storage Access Framework) memblokir akses ke folder tertentu seperti `/sdcard/Download/` dan `/sdcard/`. Error: "Can't use this folder — To protect your privacy, choose another folder"
+### FlexParentData Cast Fix ✅
+- GlassBottomNav: Positioned → Padding (works in both Stack & Column)
 
-**Fix:**
-- Added "Masukkan Path Manual" button on folder picker screen
-- Dialog input for direct path entry (e.g., `/sdcard/Comics`)
-- Added `setFolderPath()` method to `LibraryFolderNotifier`
-- Files pushed via `adb push` to emulator are directly accessible via manual path
-
-**Files changed:**
-- `lib/presentation/home/pages/home_page.dart` — added `_FolderPicker` manual input button, `_showManualInputDialog` in HomePage
-- `lib/presentation/home/providers/library_folder_providers.dart` — added `setFolderPath()` method
-
-**How to use:**
-1. Push test files: `adb push test_comics/ /sdcard/Comics/`
-2. Open app → tap "Masukkan Path Manual"
-3. Enter `/sdcard/Comics`
-4. App scans and shows library
+### PDF Fit-to-Width Fix ✅
+- Default readingMode → vertical (webtoon scroll)
+- Default fitMode → fitWidth (fills screen width)
+- SharedPreferences defaults fixed
+- Render resolution 1.5x → 2.0x
 
 ---
 
-## SQLite Schema (v5 — Final)
+## Known Issues (See ISSUES.md for details)
 
-```sql
-series: id, name, path (UNIQUE), cover_path, author, description, genres, created_at
-chapters: id, series_id (FK), name, file_path (UNIQUE), sort_order, total_pages, current_page, is_read
-library_index: id, folder_path (UNIQUE), last_scanned_at
-reading_progress: id, chapter_id (FK, UNIQUE), current_page, zoom_level, last_opened_at
-thumbnails: id, series_id (FK, UNIQUE), source, file_path, created_at
-favorites: id, series_id (FK, UNIQUE), created_at
-recent: id, series_id (FK), last_opened_at (indexed)
-```
+| Issue | Severity | Status |
+|-------|----------|--------|
+| Filter tabs not functional | High | OPEN |
+| Recent activity not working | High | OPEN |
+| Chapter shows "0 Pages" | Medium | OPEN |
+| Download button unnecessary | Low | OPEN |
+| Reader menu bar hidden by default | Critical | OPEN |
+| PDF loading UX (spinner only) | High | OPEN |
+| PDF loading too slow | Medium | OPEN |
+
+---
+
+## Build Info
+- **APK:** `build\app\outputs\flutter-apk\app-release.apk` (23.1MB)
+- **Test device:** Android emulator (emulator-5554)
+- **Test PDF:** Revenge of the Iron-Blooded Sword Hound (Chapter 0001, 5 pages, ~23MB)
+- **Git commit (desain):** cbaaf02
 
 ---
 
@@ -175,32 +153,33 @@ recent: id, series_id (FK), last_opened_at (indexed)
 | path_provider | ^2.1.2 | File paths |
 | shared_preferences | ^2.3.2 | Settings persistence |
 | watcher | ^1.1.0 | File system monitoring |
-| google_fonts | ^6.2.1 | Inter font |
 | material_symbols_icons | ^4.2719.3 | Material Symbols icons |
 | path | ^1.8.0 | Path manipulation |
+| flutter_launcher_icons | ^0.14.3 | App icon generation |
+| wakelock_plus | ^1.2.8 | Keep screen on during reading |
 
 ---
 
-## Test Files
+## SQLite Schema (v5)
 
-Test files pushed to emulator at `/sdcard/Comics/`:
-
-```
-/sdcard/Comics/
-├── Sample/
-│   ├── Chapter_0001.pdf
-│   ├── Chapter_0002.pdf
-│   ├── Chapter_0001.json
-│   └── metadata.json
-└── Manga/
-    ├── Chapter_0001.pdf – Chapter_0005.pdf
-    └── metadata.json
+```sql
+series: id, name, path (UNIQUE), cover_path, author, description, genres, created_at
+chapters: id, series_id (FK), name, file_path (UNIQUE), sort_order, total_pages, current_page, is_read
+library_index: id, folder_path (UNIQUE), last_scanned_at
+reading_progress: id, chapter_id (FK, UNIQUE), current_page, zoom_level, last_opened_at
+thumbnails: id, series_id (FK, UNIQUE), source, file_path, created_at
+favorites: id, series_id (FK, UNIQUE), created_at
+recent: id, series_id (FK), last_opened_at (indexed)
 ```
 
 ---
 
-## Notes
-- UI text kept in Indonesian per user preference
-- `rendering/` folder kept empty for future phases
-- `permission_handler` reserved for later use
-- Tests skipped (placeholder only)
+## Next Steps (Priority Order)
+
+1. **Fix chapter page count** — populate `total_pages` during scan
+2. **Remove download button** from chapter list
+3. **Fix reader controls** — show by default on entry
+4. **Progressive PDF loading** — blurred preview → sharpen
+5. **Fix filter tabs** — implement filtering logic
+6. **Fix recent activity** — save reading history on chapter open
+7. **Push all fixes to desain branch**

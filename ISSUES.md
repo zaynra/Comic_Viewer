@@ -1,139 +1,213 @@
 # Comic Viewer — Issue Log
 
-## Issue #1: Scanner Shows 0 Series Despite Files Present
-**Status:** OPEN
-**Date:** 2026-07-24
-**Severity:** Critical
-
-**Description:**
-App shows "Comics" folder with "0 series, 0 chapter" even though test files exist at `/sdcard/Comics/`. The manual path input works (shows "Comics") but scanner finds nothing.
-
-**Evidence:**
-- `adb shell ls -laR /sdcard/Comics/` confirms files exist (Sample + Manga folders, 10 PDFs)
-- App header shows: "Comics — 0 series, 0 chapter"
-- "Tidak ada series ditemukan — Pastikan folder berisi file PDF"
-
-**Root Cause:**
-Android 11+ (API 30+) **Scoped Storage** blocks `dart:io` `Directory('/sdcard/Comics').listSync()` from accessing files on external storage, even with `MANAGE_EXTERNAL_STORAGE` permission in manifest.
-
-**Attempted Fixes:**
-1. Added `MANAGE_EXTERNAL_STORAGE` permission to `AndroidManifest.xml`
-2. Added `requestLegacyExternalStorage="true"` to `<application>` tag
-3. Added `Permission.manageExternalStorage.request()` in `setFolderPath()`
-
-**Log Shows:**
-```
-D/permissions_handler( 5370): No permissions found in manifest for: []22
-```
-This means `permission_handler` package doesn't recognize the permission format.
-
-**Next Steps:**
-- Test on real device (Scoped Storage may behave differently on physical Android)
-- Consider using SAF with `OPEN_DOCUMENT_TREE` intent instead of file paths
-- Or copy files to app's internal storage
+## Last Updated: 2026-07-25 16:45 WIB
 
 ---
 
-## Issue #2: permissions_handler Not Recognizing Permission
+## CRITICAL: Functional Bugs (Current — Branch: desain)
+
+---
+
+### Issue #10: Filter Tabs Not Functional
 **Status:** OPEN
-**Date:** 2026-07-24
+**Date:** 2026-07-25
 **Severity:** High
 
 **Description:**
-`permission_handler` package logs: `No permissions found in manifest for: []22`
+Home page filter tabs (All Items / Folders / Recent / Favorites) are UI-only. Tapping any tab does nothing — the content does not change.
+
+**Expected:**
+- "All Items" → shows all series
+- "Folders" → shows folder-based view
+- "Recent" → shows recently opened series
+- "Favorites" → shows favorited series
 
 **Root Cause:**
-The `permission_handler` package may require permissions to be declared in a specific format or doesn't support `MANAGE_EXTERNAL_STORAGE` on API 33+.
-
-**Fix Needed:**
-Check `permission_handler` documentation for correct manifest format or use `open_app_settings()` as fallback.
+Tab tap handlers are wired but no filtering logic is implemented.
 
 ---
 
-## Issue #3: Emulator Name Shows "gphone" Instead of "Pixel 4"
-**Status:** NOT A BUG
-**Date:** 2026-07-24
-**Severity:** None (Informational)
-
-**Description:**
-`flutter run` shows `sdk gphone64 x86 64` — this is the **system image type**, not the AVD name. AVD is still Pixel 4. Expected Flutter behavior.
-
----
-
-## Issue #4: SAF Blocks Folder Access on Android 11+
-**Status:** FIXED
-**Date:** 2026-07-24
+### Issue #11: Recent Activity / History Not Working
+**Status:** OPEN
+**Date:** 2026-07-25
 **Severity:** High
 
 **Description:**
-SAF blocks access to `/sdcard/Download/` and root `/sdcard/` with error: "Can't use this folder — To protect your privacy, choose another folder"
+History page shows "No recent activity" even after reading chapters. The `historyProvider` does not load data.
 
-**Fix Applied:**
-- Added "Masukkan Path Manual" button
-- Dialog for direct path entry
+**Expected:**
+After opening a chapter, it should appear in History grouped by Today/Yesterday/Older.
+
+**Root Cause:**
+Reading history is not being saved to DB when a chapter is opened. `_saveProgress` in ReaderPage may not be called, or the `recent` table is not being populated on chapter open.
 
 ---
 
-## Issue #5: Slow First Launch (Skipped Frames)
+### Issue #12: Chapter Shows "0 Pages"
 **Status:** OPEN
-**Date:** 2026-07-24
+**Date:** 2026-07-25
+**Severity:** Medium
+
+**Description:**
+Series Detail page shows "0 Pages" for each chapter, even though the PDF has 5 pages.
+
+**Expected:**
+Show actual page count from PDF (e.g., "5 Pages").
+
+**Root Cause:**
+`total_pages` field in `chapters` table is not being populated during scan. The scanner reads PDF but doesn't store page count.
+
+---
+
+### Issue #13: Unnecessary Download Button
+**Status:** OPEN
+**Date:** 2026-07-25
 **Severity:** Low
 
 **Description:**
-Cold start in debug mode skips 100-165 frames (~2 seconds). Normal for debug builds on emulator.
+Each chapter row in Series Detail has a download icon button. Since all files are local PDFs, download is meaningless.
+
+**Fix:**
+Remove the download button from chapter list items.
 
 ---
 
-## Issue #6: EGL Warnings
-**Status:** OPEN (Cosmetic)
-**Severity:** None
+### Issue #14: Reader Menu Bar Not Visible
+**Status:** OPEN
+**Date:** 2026-07-25
+**Severity:** Critical
 
 **Description:**
-Multiple `E/libEGL: called unimplemented OpenGL ES API` in emulator. Normal behavior, no functional impact.
+When opening a PDF, the reader menu bar (top bar + bottom controls) is hidden by default. User must tap to reveal it. There is no visible way to navigate between chapters or access settings without knowing to tap.
+
+**Expected:**
+Controls should be visible by default when entering reader, OR there should be a persistent navigation hint.
+
+**Note:**
+The controls DO exist — they toggle via `_showControls`. But initial state is `false` (hidden). User reports they cannot see any controls.
 
 ---
 
-## Test Results Summary
+### Issue #15: PDF Loading Shows Spinner on Empty Screen
+**Status:** OPEN
+**Date:** 2026-07-25
+**Severity:** High
+
+**Description:**
+When loading a PDF, the user sees a blank dark screen with a small spinner in the center. No visual indication of progress. Can take several seconds for webtoon-style PDFs.
+
+**Expected:**
+Progressive loading: show a blurred preview first, then sharpen as full resolution renders. OR at minimum show loading progress.
+
+**Root Cause:**
+`_isLoading = true` shows a centered `CircularProgressIndicator` with no context. PDF rendering is async and takes time for large files.
+
+---
+
+### Issue #16: PDF Loading Too Slow
+**Status:** OPEN
+**Date:** 2026-07-25
+**Severity:** Medium
+
+**Description:**
+Webtoon-style PDFs (20-40MB, very tall pages) take 5-10 seconds to show first page. During this time, only a spinner is visible.
+
+**Expected:**
+- Faster initial render (lower resolution placeholder)
+- Progressive sharpening (low-res → high-res)
+- OR: show first page in low quality immediately, refine in background
+
+---
+
+## FIXED Issues (Branch: desain)
+
+---
+
+### Issue #7: Gray Screen on Launch
+**Status:** FIXED (2026-07-25)
+**Severity:** Critical
+
+**Description:**
+App showed splash logo then gray screen. No content loaded.
+
+**Root Cause:**
+`GoogleFonts.getFont('Geist')` throws exception offline. `Inter` font fails DNS lookup.
+
+**Fix:**
+- Removed `GoogleFonts` dependency from `app_text_styles.dart` and `app_theme.dart`
+- Using system `Roboto` font instead
+
+---
+
+### Issue #8: FlexParentData Cast Error
+**Status:** FIXED (2026-07-25)
+**Severity:** Critical
+
+**Description:**
+`type 'FlexParentData' is not a subtype of type 'StackParentData'` crash on launch.
+
+**Root Cause:**
+`GlassBottomNav` returned a `Positioned` widget, but was used inside a `Column` in HistoryPage. `Positioned` only works inside `Stack`.
+
+**Fix:**
+- Changed `GlassBottomNav` from `Positioned` to `Padding`
+- Wrapped in `Positioned` only in home page's `Stack`
+
+---
+
+### Issue #9: PDF Shows as Tiny Thin Lines
+**Status:** FIXED (2026-07-25)
+**Severity:** Critical
+
+**Description:**
+PDF pages rendered as very narrow strips (~60px wide) on full screen, impossible to read.
+
+**Root Cause:**
+Default `fitMode` was `fitScreen` which scales to fit both width AND height. For tall webtoon pages, the height constraint dominates, making images tiny.
+
+**Fix:**
+- Default `fitMode` → `fitWidth` (fills screen width)
+- Default `readingMode` → `vertical` (webtoon scroll)
+- Fixed SharedPreferences defaults (index 2=vertical, 1=fitWidth)
+- Render resolution 1.5x → 2.0x
+
+---
+
+## OLD Issues (Original implementation)
+
+---
+
+### Issue #1: Scanner Shows 0 Series Despite Files Present
+**Status:** FIXED (2026-07-24)
+
+Android 11+ Scoped Storage blocked `dart:io` access. Fixed with manual path input and `MANAGE_EXTERNAL_STORAGE` permission via `appops set`.
+
+---
+
+### Issue #2: permissions_handler Not Recognizing Permission
+**Status:** FIXED (2026-07-24)
+
+Used `appops set` command as workaround instead of relying on permission_handler.
+
+---
+
+### Issue #4: SAF Blocks Folder Access on Android 11+
+**Status:** FIXED (2026-07-24)
+
+Added "Masukkan Path Manual" button for direct path entry.
+
+---
+
+## Test Results (2026-07-25)
 
 | Test | Result | Notes |
 |------|--------|-------|
-| `adb push` files to emulator | ✅ Files present | `ls -laR` confirms |
-| Manual path input | ✅ Works | Shows "Comics" folder |
-| Scanner finds PDFs | ❌ 0 series | `dart:io` blocked by Scoped Storage |
-| `MANAGE_EXTERNAL_STORAGE` | ❌ Not working | `permission_handler` can't find it |
-| SAF folder picker | ⚠️ Partial | Works for some folders, blocked for others |
-
----
-
-## How to Test
-
-### Push Files:
-```bash
-adb push test_comics/Sample /sdcard/Comics/
-adb push test_comics/Manga /sdcard/Comics/
-```
-
-### Run App:
-```bash
-flutter run
-```
-
-### In App:
-1. Tap "Masukkan Path Manual" → Enter `/sdcard/Comics` → Tap "Buka"
-2. OR Tap 3-dot menu → "Ganti Folder" → Enter path
-
----
-
-## Test Files
-
-```
-/sdcard/Comics/
-├── Sample/
-│   ├── Chapter_0001.pdf (13KB)
-│   ├── Chapter_0002.pdf (13KB)
-│   ├── Chapter_0001.json
-│   └── metadata.json
-└── Manga/
-    ├── Chapter_0001.pdf – Chapter_0005.pdf (13KB each)
-    └── metadata.json
-```
+| App launches without crash | ✅ | |
+| PDF opens (5-page chapter) | ✅ | |
+| PDF renders fit-to-width | ✅ | Vertical scroll, fills screen width |
+| Filter tabs work | ❌ | UI only, no filtering logic |
+| History/Recent activity | ❌ | Not tracking reading activity |
+| Chapter page count | ❌ | Shows "0 Pages" |
+| Reader controls visible on open | ❌ | Hidden by default, user must tap |
+| PDF loading UX | ❌ | Spinner only, no progressive loading |
+| Download button | ❌ | Unnecessary for local files |
