@@ -32,6 +32,12 @@ class SeriesDetailPage extends ConsumerWidget {
             child: _MetadataSection(series: series, chaptersAsync: chaptersAsync),
           ),
           SliverToBoxAdapter(
+            child: _SynopsisSection(series: series),
+          ),
+          SliverToBoxAdapter(
+            child: _GenresSection(series: series),
+          ),
+          SliverToBoxAdapter(
             child: _ActionButtons(chaptersAsync: chaptersAsync),
           ),
           SliverToBoxAdapter(
@@ -363,6 +369,120 @@ class _ActionButtons extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return const SizedBox.shrink();
+  }
+}
+
+class _SynopsisSection extends StatelessWidget {
+  const _SynopsisSection({required this.series});
+
+  final Series series;
+
+  @override
+  Widget build(BuildContext context) {
+    if (series.description == null || series.description!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'SYNOPSIS',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.15,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              borderRadius: AppRadius.radiusLg,
+              border: Border.all(
+                color: AppColors.glassBorderSubtle,
+                width: 0.5,
+              ),
+            ),
+            child: Text(
+              series.description!,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenresSection extends StatelessWidget {
+  const _GenresSection({required this.series});
+
+  final Series series;
+
+  @override
+  Widget build(BuildContext context) {
+    if (series.genres == null || series.genres!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'GENRES',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.15,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: series.genres!.map((genre) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryContainer,
+                  borderRadius: AppRadius.pill,
+                ),
+                child: Text(
+                  genre,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.onSecondaryContainer,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
   }
 }
 

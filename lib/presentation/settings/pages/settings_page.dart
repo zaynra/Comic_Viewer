@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,71 +23,116 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceContainerLowest,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: _buildHeader()),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-              ),
-              sliver: SliverList.list(
-                children: [
-                  const SizedBox(height: AppSpacing.md),
-                  _buildBrightnessSection(settings),
-                  const SizedBox(height: AppSpacing.lg),
-                  _buildViewModeSection(settings),
-                  const SizedBox(height: AppSpacing.lg),
-                  _buildScrollModeSection(settings),
-                  const SizedBox(height: AppSpacing.lg),
-                  _buildDisplaySection(settings),
-                  const SizedBox(height: AppSpacing.lg),
-                  _buildReadingSection(settings),
-                  const SizedBox(height: AppSpacing.lg),
-                  _buildAboutSection(),
-                  const SizedBox(height: AppSpacing.xl),
-                ],
+      backgroundColor: Colors.transparent,
+      body: GestureDetector(
+        onTap: () => Navigator.of(context).pop(),
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.6),
+          child: GestureDetector(
+            onTap: () {}, // Absorb taps on the sheet itself
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                  child: Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.85,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: AppColors.surfaceContainer,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(32),
+                      ),
+                      border: Border(
+                        top: BorderSide(
+                          color: AppColors.glassBorderSubtle,
+                          width: 0.5,
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 40,
+                          offset: Offset(0, -10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Drag handle
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.sm,
+                            bottom: AppSpacing.md,
+                          ),
+                          child: Container(
+                            width: 48,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: AppColors.outlineVariant,
+                              borderRadius: AppRadius.pill,
+                            ),
+                          ),
+                        ),
+                        // Header
+                        _buildHeader(),
+                        // Scrollable content
+                        Flexible(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                            ),
+                            child: Column(
+                              children: [
+                                const SizedBox(height: AppSpacing.lg),
+                                _buildBrightnessSection(settings),
+                                const SizedBox(height: AppSpacing.lg),
+                                _buildViewModeSection(settings),
+                                const SizedBox(height: AppSpacing.lg),
+                                _buildScrollModeSection(settings),
+                                const SizedBox(height: AppSpacing.lg),
+                                _buildDisplaySection(settings),
+                                const SizedBox(height: AppSpacing.lg),
+                                _buildReadingSection(settings),
+                                const SizedBox(height: AppSpacing.lg),
+                                _buildAboutSection(),
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).padding.bottom +
+                                          AppSpacing.lg,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
         AppSpacing.lg,
-      ),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.surfaceVariant, width: 0.5),
-        ),
+        0,
+        AppSpacing.lg,
+        AppSpacing.md,
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
-                borderRadius: AppRadius.pill,
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: AppColors.onSurfaceVariant,
-                size: 20,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,9 +200,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     enabledThumbRadius: 12,
                   ),
                   overlayColor: AppColors.primary.withValues(alpha: 0.2),
-                overlayShape: const RoundSliderOverlayShape(
-                  overlayRadius: 20,
-                ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 20,
+                  ),
                 ),
                 child: Slider(
                   value: settings.readingBrightness,
@@ -167,7 +214,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
               ),
             ),
-            Icon(
+            const Icon(
               Icons.light_mode,
               color: AppColors.primary,
               size: 24,

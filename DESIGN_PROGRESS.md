@@ -192,3 +192,78 @@
 | 12 | Polish & Animation | DONE |
 
 **All 12 phases COMPLETE.**
+
+---
+
+## Design Refinements (Branch: desain)
+
+### App Icon & Branding
+| Item | Status |
+|------|--------|
+| `flutter_launcher_icons` installed | DONE |
+| `assets/images/` directory created | DONE |
+| Logo asset copied from `design/omnivousreader_modern_logo/screen.png` | DONE |
+| Android adaptive icon generated (custom comic-book design) | DONE |
+| iOS icon generated (custom OR logo) | DONE |
+| Web favicon + icons generated | DONE |
+| `pubspec.yaml` assets section added | DONE |
+
+### Splash Screen
+| Item | Status |
+|------|--------|
+| Logo image replaces text "OR" placeholder | DONE |
+| Scale-in animation on logo (0.8→1.0, easeOutBack) | DONE |
+| Glow pulse animation refined (0.03→0.08 alpha) | DONE |
+| Image.asset with errorBuilder fallback to text | DONE |
+
+### Onboarding Screen
+| Item | Status |
+|------|--------|
+| Hero illustration using logo background (15% opacity) | DONE |
+| Brand icon uses logo image instead of icon | DONE |
+| Image fade-in animation (separate from text) | DONE |
+| Gradient overlay improved | DONE |
+
+### Home Page — Glassmorphism
+| Item | Status |
+|------|--------|
+| Top bar: BackdropFilter blur(24, 24) added | DONE |
+| Top bar: semi-transparent surface color (0.8 alpha) | DONE |
+| Top bar: glass border bottom (glassBorderSubtle) | DONE |
+| Logo uses `Image.asset` with errorBuilder fallback | DONE |
+| `dart:ui` import added for ImageFilter | DONE |
+
+### Settings — Bottom Sheet Style
+| Item | Status |
+|------|--------|
+| Converted from full Scaffold to bottom sheet overlay | DONE |
+| Drag handle (48×6, outlineVariant, pill shape) | DONE |
+| Scrim overlay (black 60% alpha, tap to dismiss) | DONE |
+| BackdropFilter blur(40, 40) on sheet background | DONE |
+| Rounded top corners (32px radius) | DONE |
+| Max height 85vh with scroll | DONE |
+| Header: OmnivousReader + SETTINGS + close button | DONE |
+| All sections preserved (Brightness, View Mode, Scroll, Display, Reading, About) | DONE |
+
+### Series Detail — Synopsis & Genres
+| Item | Status |
+|------|--------|
+| `_SynopsisSection` widget added | DONE |
+| Synopsis in glass card (surfaceContainer bg, radiusLg) | DONE |
+| `_GenresSection` widget added | DONE |
+| Genre chips (secondaryContainer bg, pill shape) | DONE |
+| Empty state handling (no description/genres → hidden) | DONE |
+
+### History — Glassmorphism Cards
+| Item | Status |
+|------|--------|
+| `dart:ui` import added | DONE |
+| ClipRRect + BackdropFilter blur(12, 12) on cards | DONE |
+| Container indentation fixed | DONE |
+
+### Verification
+| Item | Status |
+|------|--------|
+| `flutter analyze lib/` — 0 errors | DONE |
+| `flutter pub get` — dependencies resolved | DONE |
+| `dart run flutter_launcher_icons` — icons generated | DONE |

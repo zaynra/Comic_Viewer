@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -295,59 +296,82 @@ class _GlassTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + AppSpacing.sm,
-        left: AppSpacing.md,
-        right: AppSpacing.md,
-        bottom: AppSpacing.sm,
-      ),
-      child: Row(
-        children: [
-          // Logo
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: const Center(
-              child: Text(
-                'OR',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + AppSpacing.sm,
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            bottom: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.8),
+            border: const Border(
+              bottom: BorderSide(
+                color: AppColors.glassBorderSubtle,
+                width: 0.5,
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          const Text(
-            'OmnivousReader',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-              color: AppColors.onSurface,
-            ),
+          child: Row(
+            children: [
+              // Logo
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  child: Image.asset(
+                    'assets/images/or_logo.png',
+                    width: 32,
+                    height: 32,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              const Text(
+                'OmnivousReader',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.create_new_folder_outlined,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.search,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
-          const Spacer(),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.create_new_folder_outlined,
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.search,
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

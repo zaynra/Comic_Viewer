@@ -18,6 +18,7 @@ class _OnboardingPageState extends State<OnboardingPage>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late Animation<double> _imageFadeAnimation;
 
   @override
   void initState() {
@@ -44,6 +45,14 @@ class _OnboardingPageState extends State<OnboardingPage>
       curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
     ));
 
+    _imageFadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
+
     _controller.forward();
   }
 
@@ -67,18 +76,46 @@ class _OnboardingPageState extends State<OnboardingPage>
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Hero illustration background (placeholder gradient)
+          // Hero illustration background
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.1),
-                    AppColors.background,
-                  ],
-                ),
+            child: FadeTransition(
+              opacity: _imageFadeAnimation,
+              child: Stack(
+                children: [
+                  // Gradient background
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.08),
+                          AppColors.background,
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Logo as hero image
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 120),
+                      child: Opacity(
+                        opacity: 0.15,
+                        child: Image.asset(
+                          'assets/images/or_logo.png',
+                          width: 320,
+                          height: 320,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.auto_stories,
+                            size: 120,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -113,27 +150,38 @@ class _OnboardingPageState extends State<OnboardingPage>
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Container(
-                      width: 48,
-                      height: 48,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
                         color: AppColors.surfaceContainerHigh,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                          color:
+                              AppColors.outlineVariant.withValues(alpha: 0.3),
                           width: 0.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryGlow.withValues(alpha: 0.2),
+                            color:
+                                AppColors.primaryGlow.withValues(alpha: 0.2),
                             blurRadius: 16,
                             spreadRadius: -2,
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.auto_stories,
-                        color: AppColors.primary,
-                        size: 24,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: Image.asset(
+                          'assets/images/or_logo.png',
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.auto_stories,
+                            color: AppColors.primary,
+                            size: 28,
+                          ),
+                        ),
                       ),
                     ),
                   ),

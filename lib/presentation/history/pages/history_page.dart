@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -210,103 +212,112 @@ class _HistoryCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainer.withValues(alpha: 0.5),
-          borderRadius: AppRadius.radiusLg,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Row(
-          children: [
-            // Thumbnail
-            Container(
-              width: 56,
-              height: 84,
-              decoration: BoxDecoration(
-                borderRadius: AppRadius.radiusMd,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: AppRadius.radiusMd,
-                child: item.series.coverPath != null
-                    ? Image.asset(
-                        item.series.coverPath!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                      )
-                    : _buildPlaceholder(),
-              ),
+      child: ClipRRect(
+        borderRadius: AppRadius.radiusLg,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer.withValues(alpha: 0.5),
+              borderRadius: AppRadius.radiusLg,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
-            const SizedBox(width: AppSpacing.md),
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.series.name,
-                    style: AppTextStyles.titleLg.copyWith(fontSize: 16),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${item.chapter.name} • Read ${_timeAgo(item.lastOpenedAt)}',
-                    style: AppTextStyles.bodyMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
+            child: Row(
+              children: [
+                // Thumbnail
+                Container(
+                  width: 56,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    borderRadius: AppRadius.radiusMd,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  // Progress bar
-                  Row(
+                  child: ClipRRect(
+                    borderRadius: AppRadius.radiusMd,
+                    child: item.series.coverPath != null
+                        ? Image.asset(
+                            item.series.coverPath!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                          )
+                        : _buildPlaceholder(),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: AppRadius.pill,
-                          child: LinearProgressIndicator(
-                            value: item.progress,
-                            minHeight: 6,
-                            backgroundColor: AppColors.surfaceContainerHighest,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.primary,
+                      Text(
+                        item.series.name,
+                        style: AppTextStyles.titleLg.copyWith(fontSize: 16),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${item.chapter.name} • Read ${_timeAgo(item.lastOpenedAt)}',
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      // Progress bar
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: AppRadius.pill,
+                              child: LinearProgressIndicator(
+                                value: item.progress,
+                                minHeight: 6,
+                                backgroundColor:
+                                    AppColors.surfaceContainerHighest,
+                                valueColor:
+                                    const AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Text(
-                        '$progressPercent%',
-                        style: AppTextStyles.labelMd.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          fontSize: 11,
-                        ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            '$progressPercent%',
+                            style: AppTextStyles.labelMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                // Play button
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color:
+                        AppColors.primaryContainer.withValues(alpha: 0.2),
+                    borderRadius: AppRadius.pill,
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: AppColors.primaryFixedDim,
+                    size: 24,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.sm),
-            // Play button
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer.withValues(alpha: 0.2),
-                borderRadius: AppRadius.pill,
-              ),
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                color: AppColors.primaryFixedDim,
-                size: 24,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -17,6 +17,8 @@ class _SplashPageState extends State<SplashPage>
   late Animation<double> _glowAnimation;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  late AnimationController _logoScaleController;
+  late Animation<double> _logoScaleAnimation;
 
   @override
   void initState() {
@@ -28,8 +30,8 @@ class _SplashPageState extends State<SplashPage>
     )..repeat(reverse: true);
 
     _glowAnimation = Tween<double>(
-      begin: 0.2,
-      end: 0.4,
+      begin: 0.03,
+      end: 0.08,
     ).animate(CurvedAnimation(
       parent: _glowController,
       curve: Curves.easeInOut,
@@ -45,10 +47,24 @@ class _SplashPageState extends State<SplashPage>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _fadeController,
-      curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
+      curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+    ));
+
+    _logoScaleController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _logoScaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _logoScaleController,
+      curve: Curves.easeOutBack,
     ));
 
     _fadeController.forward();
+    _logoScaleController.forward();
     _navigateAfterDelay();
   }
 
@@ -72,6 +88,7 @@ class _SplashPageState extends State<SplashPage>
   void dispose() {
     _glowController.dispose();
     _fadeController.dispose();
+    _logoScaleController.dispose();
     super.dispose();
   }
 
@@ -92,12 +109,12 @@ class _SplashPageState extends State<SplashPage>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.primary.withValues(
-                      alpha: _glowAnimation.value * 0.15,
+                      alpha: _glowAnimation.value,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.primary.withValues(
-                          alpha: _glowAnimation.value * 0.3,
+                          alpha: _glowAnimation.value * 2,
                         ),
                         blurRadius: 120,
                         spreadRadius: 20,
@@ -109,54 +126,56 @@ class _SplashPageState extends State<SplashPage>
             ),
           ),
 
-          // Logo container
+          // Logo image
           Center(
-            child: AnimatedBuilder(
-              animation: _glowAnimation,
-              builder: (context, _) {
-                return Container(
-                  width: 192,
-                  height: 192,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer.withValues(alpha: 0.3),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.glassBorderSubtle,
-                      width: 0.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(
-                          alpha: _glowAnimation.value * 0.3,
+            child: ScaleTransition(
+              scale: _logoScaleAnimation,
+              child: AnimatedBuilder(
+                animation: _glowAnimation,
+                builder: (context, _) {
+                  return Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.surfaceContainer.withValues(alpha: 0.2),
+                      border: Border.all(
+                        color: AppColors.glassBorderSubtle,
+                        width: 0.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(
+                            alpha: _glowAnimation.value * 3,
+                          ),
+                          blurRadius: 60,
+                          spreadRadius: -5,
                         ),
-                        blurRadius: 40,
-                        spreadRadius: -5,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Container(
-                      width: 128,
-                      height: 128,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerLowest,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'OR',
-                          style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                            letterSpacing: -2,
+                      ],
+                    ),
+                    child: Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.asset(
+                          'assets/images/or_logo.png',
+                          width: 180,
+                          height: 180,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Text(
+                            'OR',
+                            style: TextStyle(
+                              fontSize: 64,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                              letterSpacing: -2,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
 
@@ -167,14 +186,14 @@ class _SplashPageState extends State<SplashPage>
             bottom: MediaQuery.of(context).padding.bottom + 32,
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: const Text(
+              child: Text(
                 'PREMIUM COMIC READING EXPERIENCE',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.1,
-                  color: AppColors.onSurfaceVariant,
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
               ),
             ),
