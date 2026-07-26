@@ -3,12 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// OmnivousReader Design System — Typography Tokens
+/// Omnivious Reader Design System — Typography Tokens
 /// Source: design/lumina_reader/DESIGN.md
 ///
 /// Fonts:
-/// - Inter: UI text (headlines, titles, body)
-/// - Geist: Labels, metadata (page numbers, timestamps)
+/// - Inter: All UI text (headlines, titles, body, labels)
 class AppTextStyles {
   AppTextStyles._();
 
@@ -74,12 +73,11 @@ class AppTextStyles {
       );
 
   // ──────────────────────────────────────────────
-  // Labels (Geist)
+  // Labels
   // ──────────────────────────────────────────────
 
   /// 12px / 16px / 500 / letter-spacing: 0.05em
-  static TextStyle get labelMd => GoogleFonts.getFont(
-        'Geist',
+  static TextStyle get labelMd => GoogleFonts.inter(
         fontSize: 12,
         height: 16 / 12,
         fontWeight: FontWeight.w500,

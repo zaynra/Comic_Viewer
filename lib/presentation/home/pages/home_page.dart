@@ -305,27 +305,18 @@ class _GlassTopBar extends StatelessWidget {
       child: Row(
         children: [
           // Logo
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: const Center(
-              child: Text(
-                'OR',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
-              ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: Image.asset(
+              'assets/images/or_logo.png',
+              width: 32,
+              height: 32,
+              fit: BoxFit.cover,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
           const Text(
-            'OmnivousReader',
+            'Omnivious Reader',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w600,

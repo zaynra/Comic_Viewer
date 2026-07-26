@@ -4,7 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
 
-/// OmnivousReader Design System — Primary Button
+/// Omnivious Reader Design System — Primary Button
 ///
 /// Pill-shaped button with primary-container background, shadow, and scale animation.
 /// Used for main CTAs like "Resume Reading", "Get Started", etc.

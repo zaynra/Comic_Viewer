@@ -13,6 +13,7 @@ class ThumbnailService {
 
   static const _coverExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
   static const _coverNames = ['cover', 'folder', 'thumb', 'poster'];
+  static const int _thumbnailWidth = 300;
 
   Future<Thumbnail?> getThumbnail(int seriesId, String seriesPath) async {
     final existing = await _thumbnailRepository.getThumbnailBySeriesId(seriesId);
@@ -44,6 +45,25 @@ class ThumbnailService {
     return existing;
   }
 
+  Future<Thumbnail?> regenerateThumbnail(int seriesId, String seriesPath) async {
+    await deleteThumbnail(seriesId);
+    return _generateThumbnail(seriesId, seriesPath);
+  }
+
+  Future<Thumbnail?> setCustomCover(int seriesId, String seriesPath, String imagePath) async {
+    await deleteThumbnail(seriesId);
+
+    final thumbnail = Thumbnail(
+      id: 0,
+      seriesId: seriesId,
+      source: 'custom',
+      filePath: imagePath,
+      createdAt: DateTime.now(),
+    );
+    await _thumbnailRepository.saveThumbnail(thumbnail);
+    return thumbnail;
+  }
+
   String? _findCustomCover(String seriesPath) {
     final dir = Directory(seriesPath);
     if (!dir.existsSync()) return null;
@@ -68,16 +88,21 @@ class ThumbnailService {
   }
 
   Future<Thumbnail?> _generateThumbnail(int seriesId, String seriesPath) async {
-    final pdfFiles = _findFirstPdf(seriesPath);
-    if (pdfFiles == null) return null;
+    final pdfPath = _findFirstPdf(seriesPath);
+    if (pdfPath == null) return null;
 
     try {
-      final document = await PdfDocument.openFile(pdfFiles);
+      final document = await PdfDocument.openFile(pdfPath);
       if (document.pagesCount > 0) {
         final page = await document.getPage(1);
+
+        final scale = _thumbnailWidth / page.width;
+        final renderWidth = _thumbnailWidth.toDouble();
+        final renderHeight = (page.height * scale).roundToDouble();
+
         final pageImage = await page.render(
-          width: page.width,
-          height: page.height,
+          width: renderWidth,
+          height: renderHeight,
           format: PdfPageImageFormat.png,
         );
         await page.close();

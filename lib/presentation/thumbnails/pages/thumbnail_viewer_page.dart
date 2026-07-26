@@ -229,7 +229,6 @@ class _ThumbnailItem extends StatelessWidget {
                       ? AppColors.primary
                       : AppColors.onSurfaceVariant,
                   letterSpacing: 0.05,
-                  fontFamily: 'Geist',
                 ),
               ),
             ],
@@ -328,7 +327,6 @@ class _BottomNavBar extends StatelessWidget {
                       color: isSelected
                           ? AppColors.primary
                           : AppColors.onSurfaceVariant,
-                      fontFamily: 'Geist',
                     ),
                   ),
                 ),
@@ -360,7 +358,6 @@ class _BottomNavBar extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: AppColors.onSurfaceVariant,
-                    fontFamily: 'Geist',
                   ),
                 ),
               ],

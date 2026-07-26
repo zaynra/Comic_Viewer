@@ -1,4 +1,4 @@
-# Comic Viewer — Issue Log
+# Omnivious Reader — Issue Log
 
 ## Issue #1: Scanner Shows 0 Series Despite Files Present
 **Status:** OPEN

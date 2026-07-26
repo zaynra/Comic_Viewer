@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +13,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../data/providers/data_providers.dart';
 import '../../../domain/entities/chapter.dart';
 import '../../../domain/entities/series.dart';
+import '../../../domain/entities/thumbnail.dart';
 import '../../shared/widgets/widgets.dart';
 
 class SeriesDetailPage extends ConsumerWidget {
@@ -156,7 +158,7 @@ class _HeroHeader extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   // Cover thumbnail
-                  _CoverThumbnail(thumbnailAsync: thumbnailAsync),
+                  _CoverThumbnail(thumbnailAsync: thumbnailAsync, series: series),
                   const SizedBox(width: AppSpacing.md),
 
                   // Metadata
@@ -200,49 +202,182 @@ class _HeroHeader extends ConsumerWidget {
   }
 }
 
-class _CoverThumbnail extends StatelessWidget {
-  const _CoverThumbnail({required this.thumbnailAsync});
+class _CoverThumbnail extends ConsumerWidget {
+  const _CoverThumbnail({required this.thumbnailAsync, required this.series});
 
-  final AsyncValue<dynamic> thumbnailAsync;
+  final AsyncValue<Thumbnail?> thumbnailAsync;
+  final Series series;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 192,
-      height: 288,
-      decoration: BoxDecoration(
-        borderRadius: AppRadius.radiusXl,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.8),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: AppColors.glassBorderSubtle,
-          width: 0.5,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.radiusXl,
-        child: thumbnailAsync.when(
-          data: (thumbnail) {
-            if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
-              return Image.file(
-                File(thumbnail.filePath),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _PlaceholderCover(),
-              );
-            }
-            return _PlaceholderCover();
-          },
-          loading: () => _PlaceholderCover(),
-          error: (_, __) => _PlaceholderCover(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final thumbnail = thumbnailAsync.valueOrNull;
+
+    return GestureDetector(
+      onTap: () => _showCoverOptions(context, ref, series, thumbnail),
+      child: SizedBox(
+        width: 192,
+        child: Column(
+          children: [
+            Stack(
+              children: [
+                Container(
+                  width: 192,
+                  height: 288,
+                  decoration: BoxDecoration(
+                    borderRadius: AppRadius.radiusXl,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.8),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: AppColors.glassBorderSubtle,
+                      width: 0.5,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: AppRadius.radiusXl,
+                    child: thumbnailAsync.when(
+                      data: (t) {
+                        if (t != null && File(t.filePath).existsSync()) {
+                          return Image.file(
+                            File(t.filePath),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _PlaceholderCover(),
+                          );
+                        }
+                        return _PlaceholderCover();
+                      },
+                      loading: () => _PlaceholderCover(),
+                      error: (_, __) => _PlaceholderCover(),
+                    ),
+                  ),
+                ),
+                if (thumbnail != null)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: _ThumbnailSourceBadge(thumbnail: thumbnail),
+                  ),
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.white, size: 18),
+                      onPressed: () => _showCoverOptions(context, ref, series, thumbnail),
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            if (thumbnail != null)
+              _ThumbnailSourceBadge(thumbnail: thumbnail, label: true),
+          ],
         ),
       ),
     );
   }
+}
+
+class _ThumbnailSourceBadge extends StatelessWidget {
+  const _ThumbnailSourceBadge({required this.thumbnail, this.label = false});
+
+  final Thumbnail thumbnail;
+  final bool label;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCustom = thumbnail.isCustom;
+    final bg = isCustom ? Colors.amber.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.2);
+    final fg = isCustom ? Colors.black : Colors.white70;
+    final text = label ? (isCustom ? 'Custom Cover' : 'Auto-generated') : (isCustom ? 'Custom' : 'Auto');
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: label ? 8 : 6, vertical: label ? 2 : 1),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: fg, fontSize: label ? 11 : 10, fontWeight: label ? FontWeight.w500 : null),
+      ),
+    );
+  }
+}
+
+void _showCoverOptions(BuildContext context, WidgetRef ref, Series series, Thumbnail? thumbnail) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppColors.surfaceContainerLow,
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              'Cover Options',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.refresh, color: AppColors.onSurfaceVariant),
+            title: const Text('Regenerate from PDF'),
+            subtitle: const Text('Re-render cover from first page'),
+            onTap: () async {
+              Navigator.pop(ctx);
+              final service = ref.read(thumbnailServiceProvider);
+              await service.regenerateThumbnail(series.id, series.path);
+              ref.invalidate(thumbnailBySeriesProvider(series.id));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.image, color: AppColors.onSurfaceVariant),
+            title: const Text('Choose Custom Image'),
+            subtitle: const Text('Pick an image from gallery'),
+            onTap: () async {
+              Navigator.pop(ctx);
+              final result = await FilePicker.platform.pickFiles(type: FileType.image);
+              if (result != null && result.files.single.path != null) {
+                final service = ref.read(thumbnailServiceProvider);
+                await service.setCustomCover(series.id, series.path, result.files.single.path!);
+                ref.invalidate(thumbnailBySeriesProvider(series.id));
+              }
+            },
+          ),
+          if (thumbnail?.isCustom == true)
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              title: const Text('Remove Custom Cover', style: TextStyle(color: Colors.redAccent)),
+              subtitle: const Text('Revert to auto-generated'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final service = ref.read(thumbnailServiceProvider);
+                await service.deleteThumbnail(series.id);
+                ref.invalidate(thumbnailBySeriesProvider(series.id));
+              },
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
 }
 
 class _PlaceholderCover extends StatelessWidget {

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 
-/// OmnivousReader Design System — Page Scrub Slider
+/// Omnivious Reader Design System — Page Scrub Slider
 ///
 /// A floating pill-shaped page navigation slider with backdrop blur.
 /// Shows current page label, progress bar with glow handle, and total pages.

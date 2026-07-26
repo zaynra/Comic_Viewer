@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 
-/// OmnivousReader Design System — Glassmorphism App Bar
+/// Omnivious Reader Design System — Glassmorphism App Bar
 ///
 /// A translucent top app bar with backdrop blur and subtle border.
 /// Usage: Wrap in `SafeArea` or position with `Stack` + `Positioned`.

@@ -1,4 +1,4 @@
-# Setup Phase 0 — Comic Viewer
+# Setup Phase 0 — Omnivious Reader
 
 Isi zip ini **bukan** project Flutter lengkap (gradle wrapper, AndroidManifest, dsb tidak ikut serta —
 itu harus digenerate oleh `flutter create` di mesin kamu sendiri, karena file-file itu spesifik ke versi
@@ -16,7 +16,7 @@ flutter create --org com.zayn comic_viewer
 Ini bikin folder lengkap `D:\Zayn\comic_viewer\` (android/, ios/, lib/, pubspec.yaml, dst).
 
 > Nama project **harus** `comic_viewer` (lowercase + underscore) — itu aturan Dart package
-> naming, bukan pilihan gaya. Kalau mau nama tampilan beda (mis. "Comic Viewer" atau nama lain),
+> naming, bukan pilihan gaya. Kalau mau nama tampilan beda (mis. "Omnivious Reader" atau nama lain),
 > itu diatur lewat `android:label` di AndroidManifest, bukan nama folder/package.
 
 ## 2. Timpa file yang sudah digenerate

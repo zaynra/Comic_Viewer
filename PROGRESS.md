@@ -1,4 +1,4 @@
-# Comic Viewer - Development Progress
+# Omnivious Reader - Development Progress
 
 ## Current Phase: MVP Complete (Phase 0–10) ✅
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// OmnivousReader Design System — Border Radius Tokens
+/// Omnivious Reader Design System — Border Radius Tokens
 /// Source: design/lumina_reader/DESIGN.md
 class AppRadius {
   AppRadius._();

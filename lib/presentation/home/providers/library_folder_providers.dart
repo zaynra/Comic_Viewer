@@ -88,7 +88,7 @@ class LibraryFolderNotifier extends AsyncNotifier<LibraryFolder?> {
           title: const Text('Izin Diperlukan'),
           content: const Text(
             'Aplikasi membutuhkan izin "Akses semua file" untuk membaca komik.\n\n'
-            'Aktifkan izin untuk Comic Viewer di pengaturan.',
+            'Aktifkan izin untuk Omnivious Reader di pengaturan.',
           ),
           actions: [
             TextButton(

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 
-/// OmnivousReader Design System — Progress Chip
+/// Omnivious Reader Design System — Progress Chip
 ///
 /// A small label showing reading progress (e.g., "90%", "15/32", "NEW").
-/// Uses Geist-style typography for a technical, precise feel.
 class ProgressChip extends StatelessWidget {
   const ProgressChip({
     super.key,

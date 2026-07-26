@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 
-/// OmnivousReader Design System — Status Badge
+/// Omnivious Reader Design System — Status Badge
 ///
 /// Positioned badge for comic cards (e.g., "NEW", "90%").
 /// Typically placed in the top-right or top-left corner of a thumbnail.

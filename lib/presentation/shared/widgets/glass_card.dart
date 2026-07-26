@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 
-/// OmnivousReader Design System — Glassmorphism Card
+/// Omnivious Reader Design System — Glassmorphism Card
 ///
 /// A semi-transparent card with subtle border and optional hover glow.
 /// Used for chapter items, synopsis panels, genre tags, etc.

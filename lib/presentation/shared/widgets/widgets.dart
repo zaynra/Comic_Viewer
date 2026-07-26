@@ -1,4 +1,4 @@
-/// OmnivousReader Shared Widgets
+/// Omnivious Reader Shared Widgets
 ///
 /// Glassmorphism design system components for consistent UI across all screens.
 library;

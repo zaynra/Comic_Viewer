@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// OmnivousReader Design System — Material 3 Dark Color Tokens
+/// Omnivious Reader Design System — Material 3 Dark Color Tokens
 /// Source: design/lumina_reader/DESIGN.md
 /// Do not hardcode colors in widgets — always reference these.
 class AppColors {

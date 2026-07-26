@@ -91,7 +91,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'OmnivousReader',
+                  'Omnivious Reader',
                   style: AppTextStyles.headlineMd,
                 ),
                 const SizedBox(height: 2),
@@ -179,143 +179,129 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildViewModeSection(SettingsState settings) {
-    final modes = [
-      (FitMode.fitWidth, Icons.fit_screen, 'Fit Width'),
-      (FitMode.fitHeight, Icons.height, 'Fit Height'),
-      (FitMode.fitScreen, Icons.crop_free, 'Fit Screen'),
-      (FitMode.original, Icons.aspect_ratio, 'Original'),
-    ];
 
     return _SettingsSection(
       title: 'View Mode',
-      child: GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: AppSpacing.sm,
-        crossAxisSpacing: AppSpacing.sm,
-        childAspectRatio: 1.6,
-        children: modes.map((mode) {
-          final isSelected = mode.$1 == settings.fitMode;
-          return GestureDetector(
-            onTap: () {
-              ref.read(settingsProvider.notifier).setFitMode(mode.$1);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withValues(alpha: 0.1)
-                    : AppColors.surfaceContainerHigh,
-                borderRadius: AppRadius.radiusLg,
-                border: isSelected
-                    ? Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                      )
-                    : null,
-              ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHigh,
+          borderRadius: AppRadius.radiusLg,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.fit_screen,
+              color: AppColors.primary,
+              size: 28,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    mode.$2,
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.onSurfaceVariant,
-                    size: 28,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
                   Text(
-                    mode.$3,
+                    'Fit Width',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Optimal untuk webtoon vertical scroll',
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.onSurfaceVariant,
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
-          );
-        }).toList(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                'Active',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildScrollModeSection(SettingsState settings) {
-    final modes = [
-      (ReadingMode.vertical, Icons.swap_vert, 'Vertical'),
-      (ReadingMode.single, Icons.swap_horiz, 'Horizontal'),
-      (ReadingMode.doublePage, Icons.view_stream, 'Continuous'),
-    ];
-
     return _SettingsSection(
       title: 'Scroll Mode',
       child: Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerHigh,
           borderRadius: AppRadius.radiusLg,
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.3),
-          ),
         ),
         child: Row(
-          children: modes.map((mode) {
-            final isSelected = mode.$1 == settings.readingMode;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  ref
-                      .read(settingsProvider.notifier)
-                      .setReadingMode(mode.$1);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.sm,
+          children: [
+            Icon(
+              Icons.swap_vert,
+              color: AppColors.primary,
+              size: 28,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Vertical Scroll',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.surfaceContainer
-                        : Colors.transparent,
-                    borderRadius: AppRadius.radiusMd,
-                    border: isSelected
-                        ? Border.all(
-                            color:
-                                AppColors.outlineVariant.withValues(alpha: 0.5),
-                          )
-                        : null,
+                  const SizedBox(height: 2),
+                  Text(
+                    'Webtoon-style continuous scroll',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        mode.$2,
-                        size: 20,
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        mode.$3,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.3),
                 ),
               ),
-            );
-          }).toList(),
+              child: Text(
+                'Active',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

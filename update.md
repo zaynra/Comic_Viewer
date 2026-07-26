@@ -79,7 +79,7 @@
 - **Padding:** `px-md py-sm` (16px horizontal, 8px vertical)
 - **Layout:**
   - Kiri: Tombol back (`arrow_back` icon)
-  - Tengah: Logo (32x32 rounded) + Title "OmnivousReader" + Badge counter "15 / 248"
+  - Tengah: Logo (32x32 rounded) + Title "Omnivious Reader" + Badge counter "15 / 248"
   - Kanan: Tombol search
 
 #### 3. Scrub Slider (Page Navigation)

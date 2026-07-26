@@ -1,4 +1,4 @@
-# OmnivousReader Design Implementation Progress
+# Omnivious Reader Design Implementation Progress
 
 ## Target Design: `design/` folder (Lumina Reader Design System)
 
@@ -64,7 +64,7 @@
 | Item | File | Status |
 |------|------|--------|
 | HomePage rewrite | `lib/presentation/home/pages/home_page.dart` | DONE |
-| Glass top bar | OR logo + OmnivousReader title + action icons | DONE |
+| Glass top bar | OR logo + Omnivious Reader title + action icons | DONE |
 | Filter tabs | All Items / Folders / Recent / Favorites with animated selection | DONE |
 | Comic grid cards | 2-column grid with aspect ratio 0.65, progress bar at bottom | DONE |
 | Bottom nav | GlassBottomNav with Library / History / Settings | DONE |
@@ -108,7 +108,7 @@
 | Item | File | Status |
 |------|------|--------|
 | Settings rewrite | `lib/presentation/settings/pages/settings_page.dart` | DONE |
-| Glass header | OR logo + OmnivousReader + SETTINGS label + close button | DONE |
+| Glass header | OR logo + Omnivious Reader + SETTINGS label + close button | DONE |
 | Brightness slider | Custom Slider with light_mode icons, primary thumb | DONE |
 | View mode grid | 2x2 buttons: Fit Width/Height/Screen/Original with active state | DONE |
 | Scroll mode | Segmented: Vertical / Horizontal / Continuous with border | DONE |

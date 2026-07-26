@@ -12,7 +12,7 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
   late AnimationController _fadeController;
@@ -142,15 +142,13 @@ class _SplashPageState extends State<SplashPage>
                         color: AppColors.surfaceContainerLowest,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Center(
-                        child: Text(
-                          'OR',
-                          style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                            letterSpacing: -2,
-                          ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/images/or_logo.png',
+                          width: 128,
+                          height: 128,
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),

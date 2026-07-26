@@ -4,7 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
 
-/// OmnivousReader Design System — Glassmorphism Bottom Sheet
+/// Omnivious Reader Design System — Glassmorphism Bottom Sheet
 ///
 /// A modal bottom sheet with rounded top corners, drag handle,
 /// and max height constraint. Used for settings, chapter lists, etc.

@@ -1,4 +1,4 @@
-/// OmnivousReader Design System — Spacing Tokens
+/// Omnivious Reader Design System — Spacing Tokens
 /// Source: design/lumina_reader/DESIGN.md
 /// Base grid: 4px
 class AppSpacing {

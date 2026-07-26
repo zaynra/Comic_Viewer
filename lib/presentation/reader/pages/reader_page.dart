@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,10 +30,12 @@ class ReaderPage extends ConsumerStatefulWidget {
   ConsumerState<ReaderPage> createState() => _ReaderPageState();
 }
 
-class _ReaderPageState extends ConsumerState<ReaderPage> {
+class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late PdfRenderer _renderer;
   bool _isLoading = true;
-  bool _isPageLoading = false;
   String? _error;
   bool _showControls = false;
   double _scale = 1.0;
@@ -40,14 +44,18 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   int _currentChapterIndex = 0;
   Timer? _autoNextTimer;
   bool _showAutoNextDialog = false;
-  ui.Image? _currentImage;
-  ui.Image? _nextImage;
   bool _isBookmarked = false;
   Bookmark? _currentBookmark;
 
   Timer? _hideControlsTimer;
+  Timer? _highResUpgradeTimer;
+  Timer? _memoryTimer;
   final ScrollController _verticalScrollController = ScrollController();
   final TransformationController _transformationController = TransformationController();
+
+  double _avgPageHeight = 0;
+  int _lastFirstVisible = -1;
+  int _lastLastVisible = -1;
 
   @override
   void initState() {
@@ -55,6 +63,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     _renderer = PdfRenderer(widget.chapter.filePath);
     _initRenderer();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _verticalScrollController.addListener(_onScroll);
+    _memoryTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _renderer.checkMemoryPressure();
+    });
+    setState(() { _showControls = true; });
+    _startAutoHideTimer();
   }
 
   Future<void> _initRenderer() async {
@@ -73,9 +87,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           .read(chaptersRepositoryProvider)
           .getChaptersBySeriesId(widget.chapter.seriesId);
 
-      _currentImage = await _renderer.getCurrentPageImage();
       await _checkBookmark();
-      await _prefetchNext();
+      await _prefetchInitialPages();
 
       setState(() {
         _siblingChapters = chapters;
@@ -92,13 +105,21 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
   }
 
+  Future<void> _prefetchInitialPages() async {
+    await _renderer.prefetchRange(0, 4, RenderQuality.lowRes);
+    unawaited(_renderer.prefetchHighRes(0));
+  }
+
   @override
   void dispose() {
     _autoNextTimer?.cancel();
     _hideControlsTimer?.cancel();
+    _highResUpgradeTimer?.cancel();
+    _memoryTimer?.cancel();
     _saveProgress();
     _renderer.disposeCache();
     _renderer.close();
+    _verticalScrollController.removeListener(_onScroll);
     _verticalScrollController.dispose();
     _transformationController.dispose();
     WakelockPlus.disable();
@@ -162,49 +183,43 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
   }
 
-  Future<void> _toggleBookmark() async {
-    final repo = ref.read(bookmarkRepositoryProvider);
-    if (_isBookmarked && _currentBookmark != null) {
-      await repo.removeBookmark(_currentBookmark!.id);
-    } else {
-      await repo.addBookmark(Bookmark(
-        id: 0,
-        chapterId: widget.chapter.id,
-        page: _renderer.currentPage,
-        createdAt: DateTime.now(),
-      ));
+  void _onScroll() {
+    if (!_verticalScrollController.hasClients) return;
+
+    final position = _verticalScrollController.position;
+    final viewportHeight = position.viewportDimension;
+    final scrollOffset = position.pixels;
+
+    if (_avgPageHeight == 0 && _renderer.hasDocument) {
+      _updateAvgPageHeight();
     }
-    await _checkBookmark();
+
+    if (_avgPageHeight == 0) return;
+
+    final firstVisible = (scrollOffset / _avgPageHeight).floor().clamp(0, _renderer.totalPages - 1);
+    final lastVisible = ((scrollOffset + viewportHeight) / _avgPageHeight).ceil().clamp(0, _renderer.totalPages - 1);
+
+    if (firstVisible != _lastFirstVisible || lastVisible != _lastLastVisible) {
+      _lastFirstVisible = firstVisible;
+      _lastLastVisible = lastVisible;
+
+      final prefetchStart = (firstVisible - 2).clamp(0, _renderer.totalPages - 1);
+      final prefetchEnd = (lastVisible + 2).clamp(0, _renderer.totalPages - 1);
+      _renderer.prefetchRange(prefetchStart, prefetchEnd, RenderQuality.lowRes);
+
+      _highResUpgradeTimer?.cancel();
+      _highResUpgradeTimer = Timer(const Duration(seconds: 2), () {
+        for (int i = firstVisible; i <= lastVisible; i++) {
+          _renderer.prefetchHighRes(i);
+        }
+      });
+    }
   }
 
-  Future<void> _prefetchNext() async {
-    if (_renderer.canGoNext) {
-      _nextImage = await _renderer.getPageImage(_renderer.currentPage + 1);
-    } else {
-      _nextImage = null;
-    }
-  }
-
-  void _onTapDown(TapDownDetails details) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final tapX = details.globalPosition.dx;
-
-    if (tapX < screenWidth / 3) {
-      final settings = ref.read(settingsProvider);
-      if (settings.readingDirection == ReadingDirection.rightToLeft) {
-        _nextPage();
-      } else {
-        _previousPage();
-      }
-    } else if (tapX > screenWidth * 2 / 3) {
-      final settings = ref.read(settingsProvider);
-      if (settings.readingDirection == ReadingDirection.rightToLeft) {
-        _previousPage();
-      } else {
-        _nextPage();
-      }
-    } else {
-      _toggleControls();
+  Future<void> _updateAvgPageHeight() async {
+    final firstPage = await _renderer.getPageImage(0, quality: RenderQuality.lowRes);
+    if (firstPage != null) {
+      _avgPageHeight = firstPage.height.toDouble();
     }
   }
 
@@ -231,19 +246,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   Future<void> _nextPage() async {
     if (_renderer.canGoNext) {
-      setState(() {
-        _isPageLoading = true;
-        _scale = 1.0;
-        _transformationController.value = Matrix4.identity();
-      });
       await _renderer.nextPage();
-      _currentImage = _nextImage;
-      _nextImage = null;
-      _checkBookmark();
-      _prefetchNext();
-      setState(() {
-        _isPageLoading = false;
-      });
+      await _checkBookmark();
     } else if (_hasNextChapter) {
       final settings = ref.read(settingsProvider);
       if (settings.autoContinue) {
@@ -256,48 +260,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   Future<void> _previousPage() async {
     if (_renderer.canGoPrevious) {
-      setState(() {
-        _isPageLoading = true;
-        _scale = 1.0;
-        _transformationController.value = Matrix4.identity();
-      });
       await _renderer.previousPage();
-      _currentImage = await _renderer.getCurrentPageImage();
-      _checkBookmark();
-      _prefetchNext();
-      setState(() {
-        _isPageLoading = false;
-      });
+      await _checkBookmark();
     } else if (_hasPreviousChapter) {
       _goToPreviousChapter();
-    }
-  }
-
-  Future<void> _goToPage(int page) async {
-    setState(() {
-      _isPageLoading = true;
-      _scale = 1.0;
-      _transformationController.value = Matrix4.identity();
-    });
-    await _renderer.goToPage(page);
-    _currentImage = await _renderer.getCurrentPageImage();
-    _checkBookmark();
-    _prefetchNext();
-    setState(() {
-      _isPageLoading = false;
-    });
-  }
-
-  void _onDoubleTapDown(TapDownDetails details) {
-    if (_scale > 1.0) {
-      setState(() {
-        _scale = 1.0;
-        _transformationController.value = Matrix4.identity();
-      });
-    } else {
-      setState(() {
-        _scale = 2.0;
-      });
     }
   }
 
@@ -348,6 +314,129 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
   }
 
+  void _showChapterList() {
+    final dir = Directory(p.dirname(widget.chapter.filePath));
+    final pdfs = <FileSystemEntity>[];
+    if (dir.existsSync()) {
+      pdfs.addAll(dir.listSync().where((f) =>
+          f is File && p.extension(f.path).toLowerCase() == '.pdf'));
+    }
+    pdfs.sort((a, b) => p.basenameWithoutExtension(a.path)
+        .toLowerCase()
+        .compareTo(p.basenameWithoutExtension(b.path).toLowerCase()));
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg),
+        decoration: const BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 48,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: AppColors.outlineVariant,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Semua File',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Symbols.close, color: AppColors.onSurfaceVariant),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Expanded(
+              child: pdfs.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Tidak ada file PDF ditemukan',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: pdfs.length,
+                      separatorBuilder: (_, __) => const Divider(
+                        color: AppColors.outlineVariant,
+                        height: 1,
+                      ),
+                      itemBuilder: (context, index) {
+                        final file = pdfs[index] as File;
+                        final fileName = p.basenameWithoutExtension(file.path);
+                        final isCurrent = file.path == widget.chapter.filePath;
+                        final matchingChapter = _siblingChapters.where(
+                            (c) => c.filePath == file.path).firstOrNull;
+                        return ListTile(
+                          dense: true,
+                          selected: isCurrent,
+                          selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          title: Text(
+                            matchingChapter?.name ?? fileName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
+                              color: isCurrent ? AppColors.primary : AppColors.onSurface,
+                            ),
+                          ),
+                          subtitle: !isCurrent && matchingChapter != null
+                              ? Text(
+                                  matchingChapter.name,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                )
+                              : null,
+                          trailing: isCurrent
+                              ? const Icon(Symbols.check, size: 18, color: AppColors.primary)
+                              : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            if (!isCurrent && matchingChapter != null) {
+                              _saveProgress();
+                              context.pushReplacementNamed('reader', extra: matchingChapter);
+                            }
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showSettingsSheet() {
     final settings = ref.read(settingsProvider);
     double brightness = settings.readingBrightness;
@@ -368,7 +457,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Drag handle
               Center(
                 child: Container(
                   width: 48,
@@ -381,7 +469,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Header
               Row(
                 children: [
                   const Expanded(
@@ -417,7 +504,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // Brightness
               const Text(
                 'Brightness',
                 style: TextStyle(
@@ -443,6 +529,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                         max: 1.0,
                         onChanged: (value) {
                           setSheetState(() => brightness = value);
+                          ref.read(settingsProvider.notifier).setReadingBrightness(value);
                         },
                       ),
                     ),
@@ -452,73 +539,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // View Mode
               const Text(
-                'View Mode',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                mainAxisSpacing: AppSpacing.sm,
-                crossAxisSpacing: AppSpacing.sm,
-                childAspectRatio: 1.5,
-                children: FitMode.values.map((mode) {
-                  final isSelected = mode == settings.fitMode;
-                  return GestureDetector(
-                    onTap: () {
-                      ref.read(settingsProvider.notifier).setFitMode(mode);
-                      setSheetState(() {});
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primary.withValues(alpha: 0.1)
-                            : AppColors.surfaceContainerHigh,
-                        borderRadius: AppRadius.radiusLg,
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.primary.withValues(alpha: 0.3)
-                              : Colors.transparent,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _getFitModeIcon(mode),
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.onSurfaceVariant,
-                            size: 24,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            mode.label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // Scroll Mode
-              const Text(
-                'Scroll Mode',
+                'Render Quality',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -527,59 +549,33 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainerHigh,
                   borderRadius: AppRadius.radiusLg,
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                  ),
                 ),
-                child: Row(
-                  children: ReadingMode.values.map((mode) {
-                    final isSelected = mode == settings.readingMode;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          ref.read(settingsProvider.notifier).setReadingMode(mode);
-                          setSheetState(() {});
+                child: Column(
+                  children: RenderScale.values.map((scale) {
+                    final isSelected = scale == settings.renderScale;
+                    return ListTile(
+                      dense: true,
+                      leading: Radio<RenderScale>(
+                        value: scale,
+                        groupValue: settings.renderScale,
+                        onChanged: (value) {
+                          if (value != null) {
+                            ref.read(settingsProvider.notifier).setRenderScale(value);
+                            setSheetState(() {});
+                          }
                         },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.surfaceContainer
-                                : Colors.transparent,
-                            borderRadius: AppRadius.radiusMd,
-                            border: isSelected
-                                ? Border.all(
-                                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
-                                  )
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _getReadingModeIcon(mode),
-                                size: 16,
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : AppColors.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                mode.label,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
+                        activeColor: AppColors.primary,
+                      ),
+                      title: Text(
+                        scale.label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: isSelected ? AppColors.primary : AppColors.onSurface,
                         ),
                       ),
                     );
@@ -588,7 +584,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // Display toggles
               const Text(
                 'Display',
                 style: TextStyle(
@@ -599,19 +594,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               _SettingsToggle(
-                icon: Icons.dark_mode,
-                title: 'Dark Mode',
-                subtitle: 'Reduce eye strain',
-                value: true,
-                onChanged: (_) {},
-              ),
-              _SettingsToggle(
                 icon: Icons.nightlight,
                 title: 'Night Filter',
                 subtitle: 'Warmer tint for reading',
                 value: overlay > 0,
                 onChanged: (value) {
                   setSheetState(() => overlay = value ? 0.3 : 0);
+                  ref.read(settingsProvider.notifier).setDarkOverlay(value ? 0.3 : 0);
                 },
               ),
               _SettingsToggle(
@@ -621,6 +610,41 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 value: settings.keepScreenOn,
                 onChanged: (value) {
                   ref.read(settingsProvider.notifier).setKeepScreenOn(value);
+                },
+              ),
+              _SettingsToggle(
+                icon: Icons.skip_next,
+                title: 'Auto Continue',
+                subtitle: 'Auto next chapter',
+                value: settings.autoContinue,
+                onChanged: (value) {
+                  ref.read(settingsProvider.notifier).setAutoContinue(value);
+                },
+              ),
+              _SettingsToggle(
+                icon: Icons.swap_horiz,
+                title: 'Reading Direction',
+                subtitle: settings.readingDirection == ReadingDirection.leftToRight 
+                    ? 'Left to Right' 
+                    : 'Right to Left',
+                value: settings.readingDirection == ReadingDirection.rightToLeft,
+                onChanged: (value) {
+                  ref.read(settingsProvider.notifier).setReadingDirection(
+                    value ? ReadingDirection.rightToLeft : ReadingDirection.leftToRight
+                  );
+                },
+              ),
+              _SettingsToggle(
+                icon: Icons.rotate_right,
+                title: 'Orientation',
+                subtitle: _getOrientationLabel(settings.orientationMode),
+                value: settings.orientationMode != OrientationMode.portrait,
+                onChanged: (value) {
+                  final modes = [OrientationMode.portrait, OrientationMode.landscape, OrientationMode.auto];
+                  final currentIndex = modes.indexOf(settings.orientationMode);
+                  final nextIndex = (currentIndex + 1) % modes.length;
+                  ref.read(settingsProvider.notifier).setOrientationMode(modes[nextIndex]);
+                  _applyOrientation();
                 },
               ),
 
@@ -635,192 +659,19 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     });
   }
 
-  IconData _getFitModeIcon(FitMode mode) {
+  String _getOrientationLabel(OrientationMode mode) {
     switch (mode) {
-      case FitMode.fitWidth:
-        return Icons.fit_screen;
-      case FitMode.fitHeight:
-        return Icons.height;
-      case FitMode.fitScreen:
-        return Icons.crop_free;
-      case FitMode.original:
-        return Icons.aspect_ratio;
-    }
-  }
-
-  IconData _getReadingModeIcon(ReadingMode mode) {
-    switch (mode) {
-      case ReadingMode.vertical:
-        return Icons.swap_vert;
-      case ReadingMode.doublePage:
-        return Icons.view_stream;
-      case ReadingMode.single:
-        return Icons.swap_horiz;
+      case OrientationMode.auto:
+        return 'Auto';
+      case OrientationMode.portrait:
+        return 'Portrait';
+      case OrientationMode.landscape:
+        return 'Landscape';
     }
   }
 
   Widget _buildPageView() {
-    final settings = ref.watch(settingsProvider);
-
-    if (settings.readingMode == ReadingMode.vertical) {
-      return _buildVerticalScrollMode();
-    }
-
-    if (settings.readingMode == ReadingMode.doublePage) {
-      return _buildDoublePageMode();
-    }
-
-    return _buildSinglePageMode();
-  }
-
-  Widget _buildSinglePageMode() {
-    final settings = ref.watch(settingsProvider);
-
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onDoubleTapDown: _onDoubleTapDown,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final screenW = constraints.maxWidth;
-          final screenH = constraints.maxHeight;
-
-          if (_currentImage == null) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            );
-          }
-
-          final imgW = _currentImage!.width.toDouble();
-          final imgH = _currentImage!.height.toDouble();
-
-          double displayW;
-          double displayH;
-
-          switch (settings.fitMode) {
-            case FitMode.fitScreen:
-              final scaleW = screenW / imgW;
-              final scaleH = screenH / imgH;
-              final scale = scaleW < scaleH ? scaleW : scaleH;
-              displayW = imgW * scale;
-              displayH = imgH * scale;
-              break;
-            case FitMode.fitWidth:
-              displayW = screenW;
-              displayH = imgH * (screenW / imgW);
-              break;
-            case FitMode.fitHeight:
-              displayH = screenH;
-              displayW = imgW * (screenH / imgH);
-              break;
-            case FitMode.original:
-              displayW = imgW;
-              displayH = imgH;
-              break;
-          }
-
-          return InteractiveViewer(
-            transformationController: _transformationController,
-            minScale: 0.5,
-            maxScale: 5.0,
-            onInteractionUpdate: (details) {
-              setState(() {
-                _scale = _transformationController.value.getMaxScaleOnAxis();
-              });
-            },
-            child: SizedBox(
-              width: screenW,
-              height: screenH,
-              child: Center(
-                child: SizedBox(
-                  width: displayW,
-                  height: displayH,
-                  child: RawImage(
-                    image: _currentImage,
-                    width: displayW,
-                    height: displayH,
-                    fit: BoxFit.fill,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildDoublePageMode() {
-    final settings = ref.watch(settingsProvider);
-
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onDoubleTapDown: _onDoubleTapDown,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final halfW = constraints.maxWidth / 2;
-          final screenH = constraints.maxHeight;
-
-          return Row(
-            children: [
-              Expanded(
-                child: _currentImage != null
-                    ? _buildFittedPageHalf(_currentImage!, halfW, screenH, settings.fitMode)
-                    : const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: _nextImage != null
-                    ? _buildFittedPageHalf(_nextImage!, halfW, screenH, settings.fitMode)
-                    : const SizedBox(),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildFittedPageHalf(ui.Image image, double maxW, double maxH, FitMode fitMode) {
-    final imgW = image.width.toDouble();
-    final imgH = image.height.toDouble();
-
-    double displayW;
-    double displayH;
-
-    switch (fitMode) {
-      case FitMode.fitScreen:
-        final scaleW = maxW / imgW;
-        final scaleH = maxH / imgH;
-        final scale = scaleW < scaleH ? scaleW : scaleH;
-        displayW = imgW * scale;
-        displayH = imgH * scale;
-        break;
-      case FitMode.fitWidth:
-        displayW = maxW;
-        displayH = imgH * (maxW / imgW);
-        break;
-      case FitMode.fitHeight:
-        displayH = maxH;
-        displayW = imgW * (maxH / imgH);
-        break;
-      case FitMode.original:
-        displayW = imgW;
-        displayH = imgH;
-        break;
-    }
-
-    return Center(
-      child: SizedBox(
-        width: displayW,
-        height: displayH,
-        child: RawImage(
-          image: image,
-          width: displayW,
-          height: displayH,
-          fit: BoxFit.fill,
-        ),
-      ),
-    );
+    return _buildVerticalScrollMode();
   }
 
   Widget _buildVerticalScrollMode() {
@@ -829,36 +680,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       physics: const ClampingScrollPhysics(),
       itemCount: _renderer.totalPages,
       itemBuilder: (context, index) {
-        return FutureBuilder<ui.Image?>(
-          future: _renderer.getPageImage(index),
-          builder: (context, snapshot) {
-            if (snapshot.hasData && snapshot.data != null) {
-              final img = snapshot.data!;
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final screenW = constraints.maxWidth;
-                  final imgW = img.width.toDouble();
-                  final imgH = img.height.toDouble();
-                  final displayH = imgH * (screenW / imgW);
-                  return SizedBox(
-                    width: screenW,
-                    height: displayH,
-                    child: RawImage(
-                      image: img,
-                      width: screenW,
-                      height: displayH,
-                      fit: BoxFit.fill,
-                    ),
-                  );
-                },
-              );
-            }
-            return Container(
-              height: 400,
-              alignment: Alignment.center,
-              child: const CircularProgressIndicator(color: AppColors.primary),
-            );
-          },
+        return _ProgressivePageImage(
+          pageIndex: index,
+          renderer: _renderer,
         );
       },
     );
@@ -866,6 +690,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
@@ -926,7 +751,11 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           else
             Stack(
               children: [
-                _buildPageView(),
+                GestureDetector(
+                  onTap: _toggleControls,
+                  behavior: HitTestBehavior.translucent,
+                  child: _buildPageView(),
+                ),
                 if (settings.darkOverlay > 0)
                   IgnorePointer(
                     child: Container(
@@ -939,14 +768,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       color: Colors.white.withValues(alpha: 1.0 - settings.readingBrightness),
                     ),
                   ),
-                if (_isPageLoading)
-                  const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
               ],
             ),
 
-          // Auto-next dialog
           if (_showAutoNextDialog && _nextChapter != null)
             Positioned(
               bottom: 100,
@@ -999,10 +823,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
             ),
 
-          // Top App Bar (Glassmorphism)
           if (_showControls)
             Positioned(
-              top: 0,
+              bottom: 0,
               left: 0,
               right: 0,
               child: ClipRect(
@@ -1010,172 +833,55 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                   filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                   child: Container(
                     padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).padding.top,
+                      top: AppSpacing.sm,
                       left: AppSpacing.md,
                       right: AppSpacing.md,
-                      bottom: AppSpacing.sm,
+                      bottom: MediaQuery.of(context).padding.bottom + AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceContainerHighest.withValues(alpha: 0.8),
                       border: const Border(
-                        bottom: BorderSide(
+                        top: BorderSide(
                           color: AppColors.glassBorderSubtle,
                           width: 0.5,
                         ),
                       ),
                     ),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => context.pop(),
-                          color: AppColors.onSurface,
+                          icon: const Icon(Symbols.navigate_before),
+                          onPressed: _hasPreviousChapter ? _goToPreviousChapter : null,
+                          color: _hasPreviousChapter
+                              ? AppColors.onSurface
+                              : AppColors.onSurfaceVariant.withValues(alpha: 0.3),
+                          tooltip: 'File Sebelumnya',
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceContainerLowest,
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'OR',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: Text(
-                                  widget.chapter.name,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.onSurface,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerHigh,
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                          ),
-                          child: Text(
-                            '${_renderer.currentPage + 1} / ${_renderer.totalPages}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
                         IconButton(
-                          icon: const Icon(Icons.search),
-                          onPressed: () {},
+                          icon: const Icon(Symbols.menu),
+                          onPressed: _showChapterList,
                           color: AppColors.onSurface,
+                          tooltip: 'Semua File',
+                        ),
+                        IconButton(
+                          icon: const Icon(Symbols.settings),
+                          onPressed: _showSettingsSheet,
+                          color: AppColors.onSurface,
+                          tooltip: 'Pengaturan',
+                        ),
+                        IconButton(
+                          icon: const Icon(Symbols.navigate_next),
+                          onPressed: _hasNextChapter ? _goToNextChapter : null,
+                          color: _hasNextChapter
+                              ? AppColors.onSurface
+                              : AppColors.onSurfaceVariant.withValues(alpha: 0.3),
+                          tooltip: 'File Berikutnya',
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-            ),
-
-          // Bottom Controls (Glassmorphism)
-          if (_showControls && settings.readingMode != ReadingMode.vertical)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Page Slider
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                    child: PageSlider(
-                      currentPage: _renderer.currentPage + 1,
-                      totalPages: _renderer.totalPages,
-                      onChanged: (value) {
-                        _goToPage(value.toInt() - 1);
-                        _startAutoHideTimer();
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-
-                  // Bottom Nav
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: AppSpacing.md,
-                      right: AppSpacing.md,
-                      bottom: MediaQuery.of(context).padding.bottom + AppSpacing.md,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: AppRadius.pill,
-                      child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg,
-                            vertical: AppSpacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerHigh.withValues(alpha: 0.9),
-                            borderRadius: AppRadius.pill,
-                            border: Border.all(
-                              color: AppColors.glassBorder,
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _ReaderNavButton(
-                                icon: Icons.skip_previous,
-                                label: 'Prev',
-                                onPressed: _hasPreviousChapter ? _goToPreviousChapter : null,
-                              ),
-                              _ReaderNavButton(
-                                icon: Icons.skip_next,
-                                label: 'Next',
-                                onPressed: _hasNextChapter ? _goToNextChapter : null,
-                              ),
-                              _ReaderNavButton(
-                                icon: Icons.settings,
-                                label: 'Settings',
-                                onPressed: _showSettingsSheet,
-                              ),
-                              _ReaderNavButton(
-                                icon: Icons.more_horiz,
-                                label: 'More',
-                                onPressed: () {},
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
         ],
@@ -1184,27 +890,138 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 }
 
-class _ReaderNavButton extends StatelessWidget {
-  const _ReaderNavButton({
-    required this.icon,
-    required this.label,
-    this.onPressed,
+class _ProgressivePageImage extends StatefulWidget {
+  const _ProgressivePageImage({
+    required this.pageIndex,
+    required this.renderer,
   });
 
-  final IconData icon;
-  final String label;
-  final VoidCallback? onPressed;
+  final int pageIndex;
+  final PdfRenderer renderer;
+
+  @override
+  State<_ProgressivePageImage> createState() => _ProgressivePageImageState();
+}
+
+class _ProgressivePageImageState extends State<_ProgressivePageImage> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  ui.Image? _thumbnail;
+  ui.Image? _lowRes;
+  ui.Image? _highRes;
+  int _currentPhase = 0; // 0=thumb, 1=low, 2=high
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProgressive();
+  }
+
+  @override
+  void dispose() {
+    _thumbnail?.dispose();
+    _lowRes?.dispose();
+    _highRes?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadProgressive() async {
+    if (!mounted) return;
+
+    final rawThumb = await widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.thumbnail);
+    final thumb = rawThumb?.clone();
+    if (mounted) {
+      setState(() {
+        _thumbnail = thumb;
+        _currentPhase = 0;
+      });
+    }
+
+    final rawLow = await widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.lowRes);
+    final low = rawLow?.clone();
+    if (mounted) {
+      setState(() {
+        _lowRes = low;
+        _currentPhase = 1;
+      });
+    }
+
+    final rawHigh = await widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.highRes);
+    final high = rawHigh?.clone();
+    if (mounted) {
+      setState(() {
+        _highRes = high;
+        _currentPhase = 2;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Icon(
-          icon,
-          color: onPressed != null ? AppColors.onSurfaceVariant : AppColors.outline,
-          size: 24,
+    super.build(context);
+
+    final screenW = MediaQuery.of(context).size.width;
+
+    Widget currentImage;
+    if (_currentPhase == 2 && _highRes != null) {
+      currentImage = _buildImage(_highRes!, screenW);
+    } else if (_currentPhase >= 1 && _lowRes != null) {
+      currentImage = _buildImage(_lowRes!, screenW);
+    } else if (_thumbnail != null) {
+      currentImage = _buildBlurredThumbnail(_thumbnail!, screenW);
+    } else {
+      return SizedBox(
+        width: screenW,
+        height: 200,
+        child: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+        ),
+      );
+    }
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      child: KeyedSubtree(
+        key: ValueKey(_currentPhase),
+        child: currentImage,
+      ),
+    );
+  }
+
+  Widget _buildImage(ui.Image image, double screenW) {
+    final imgW = image.width.toDouble();
+    final imgH = image.height.toDouble();
+    final displayH = imgH * (screenW / imgW);
+    return SizedBox(
+      width: screenW,
+      height: displayH,
+      child: RawImage(
+        image: image,
+        width: screenW,
+        height: displayH,
+        fit: BoxFit.fill,
+      ),
+    );
+  }
+
+  Widget _buildBlurredThumbnail(ui.Image image, double screenW) {
+    final imgW = image.width.toDouble();
+    final imgH = image.height.toDouble();
+    final displayH = imgH * (screenW / imgW);
+    return ImageFiltered(
+      imageFilter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+      child: SizedBox(
+        width: screenW,
+        height: displayH,
+        child: RawImage(
+          image: image,
+          width: screenW,
+          height: displayH,
+          fit: BoxFit.fill,
+          filterQuality: FilterQuality.low,
         ),
       ),
     );
@@ -1272,6 +1089,7 @@ class _SettingsToggle extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
+            activeColor: AppColors.primary,
           ),
         ],
       ),

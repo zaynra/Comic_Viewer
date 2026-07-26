@@ -29,7 +29,7 @@ class ComicViewerApp extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
 
     return MaterialApp.router(
-      title: 'Comic Viewer',
+      title: 'Omnivious Reader',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       darkTheme: AppTheme.dark,

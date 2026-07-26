@@ -6,7 +6,7 @@ import '../constants/app_radius.dart';
 import '../constants/app_spacing.dart';
 import '../constants/app_text_styles.dart';
 
-/// OmnivousReader Design System — Theme Configuration
+/// Omnivious Reader Design System — Theme Configuration
 /// Source: design/lumina_reader/DESIGN.md
 class AppTheme {
   AppTheme._();
@@ -75,7 +75,7 @@ class AppTheme {
       bodyLarge: AppTextStyles.bodyLg,
       bodyMedium: AppTextStyles.bodyMd,
 
-      // Labels (use Inter fallback, Geist applied per-widget)
+      // Labels
       labelSmall: AppTextStyles.labelMd,
     );
 

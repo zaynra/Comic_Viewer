@@ -6,7 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
 
-/// OmnivousReader Design System — Glassmorphism Bottom Navigation
+/// Omnivious Reader Design System — Glassmorphism Bottom Navigation
 ///
 /// A floating pill-shaped bottom navigation bar with backdrop blur.
 /// Positioned 20px from bottom (safeMargin) with horizontal margins.

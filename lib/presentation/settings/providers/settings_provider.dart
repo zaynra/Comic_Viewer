@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum ReadingMode {
-  single('Halaman Tunggal'),
-  doublePage('Halaman Ganda'),
   vertical('Vertical Scroll');
 
   const ReadingMode(this.label);
@@ -12,10 +10,7 @@ enum ReadingMode {
 }
 
 enum FitMode {
-  fitScreen('Fit to Screen'),
-  fitWidth('Fit Width'),
-  fitHeight('Fit Height'),
-  original('Ukuran Asli');
+  fitWidth('Fit Width');
 
   const FitMode(this.label);
   final String label;
@@ -30,13 +25,32 @@ enum OrientationMode {
   final String label;
 }
 
+enum RenderScale {
+  scale150('150% (Cepat)'),
+  scale200('200% (Tajam)');
+
+  const RenderScale(this.label);
+  final String label;
+}
+
+enum ThumbnailSource {
+  auto('Otomatis'),
+  custom('Kustom'),
+  regenerate('Regenerate');
+
+  const ThumbnailSource(this.label);
+  final String label;
+}
+
 class SettingsState {
   const SettingsState({
     this.themeMode = ThemeMode.dark,
     this.readingDirection = ReadingDirection.leftToRight,
-    this.readingMode = ReadingMode.single,
-    this.fitMode = FitMode.fitScreen,
+    this.readingMode = ReadingMode.vertical,
+    this.fitMode = FitMode.fitWidth,
     this.orientationMode = OrientationMode.auto,
+    this.renderScale = RenderScale.scale150,
+    this.thumbnailSource = ThumbnailSource.auto,
     this.keepScreenOn = true,
     this.readingBrightness = 1.0,
     this.darkOverlay = 0.0,
@@ -48,6 +62,8 @@ class SettingsState {
   final ReadingMode readingMode;
   final FitMode fitMode;
   final OrientationMode orientationMode;
+  final RenderScale renderScale;
+  final ThumbnailSource thumbnailSource;
   final bool keepScreenOn;
   final double readingBrightness;
   final double darkOverlay;
@@ -59,6 +75,8 @@ class SettingsState {
     ReadingMode? readingMode,
     FitMode? fitMode,
     OrientationMode? orientationMode,
+    RenderScale? renderScale,
+    ThumbnailSource? thumbnailSource,
     bool? keepScreenOn,
     double? readingBrightness,
     double? darkOverlay,
@@ -70,6 +88,8 @@ class SettingsState {
       readingMode: readingMode ?? this.readingMode,
       fitMode: fitMode ?? this.fitMode,
       orientationMode: orientationMode ?? this.orientationMode,
+      renderScale: renderScale ?? this.renderScale,
+      thumbnailSource: thumbnailSource ?? this.thumbnailSource,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       readingBrightness: readingBrightness ?? this.readingBrightness,
       darkOverlay: darkOverlay ?? this.darkOverlay,
@@ -100,6 +120,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final readingModeIndex = _prefs.getInt('reading_mode') ?? 0;
     final fitModeIndex = _prefs.getInt('fit_mode') ?? 0;
     final orientationIndex = _prefs.getInt('orientation_mode') ?? 0;
+    final renderScaleIndex = _prefs.getInt('render_scale') ?? 0; // default 150%
+    final thumbnailSourceIndex = _prefs.getInt('thumbnail_source') ?? 0;
     final keepScreenOn = _prefs.getBool('keep_screen_on') ?? true;
     final readingBrightness = _prefs.getDouble('reading_brightness') ?? 1.0;
     final darkOverlay = _prefs.getDouble('dark_overlay') ?? 0.0;
@@ -111,6 +133,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       readingMode: ReadingMode.values[readingModeIndex],
       fitMode: FitMode.values[fitModeIndex],
       orientationMode: OrientationMode.values[orientationIndex],
+      renderScale: RenderScale.values[renderScaleIndex],
+      thumbnailSource: ThumbnailSource.values[thumbnailSourceIndex],
       keepScreenOn: keepScreenOn,
       readingBrightness: readingBrightness,
       darkOverlay: darkOverlay,
@@ -141,6 +165,16 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   Future<void> setOrientationMode(OrientationMode mode) async {
     state = state.copyWith(orientationMode: mode);
     await _prefs.setInt('orientation_mode', mode.index);
+  }
+
+  Future<void> setRenderScale(RenderScale scale) async {
+    state = state.copyWith(renderScale: scale);
+    await _prefs.setInt('render_scale', scale.index);
+  }
+
+  Future<void> setThumbnailSource(ThumbnailSource source) async {
+    state = state.copyWith(thumbnailSource: source);
+    await _prefs.setInt('thumbnail_source', source.index);
   }
 
   Future<void> setKeepScreenOn(bool value) async {
