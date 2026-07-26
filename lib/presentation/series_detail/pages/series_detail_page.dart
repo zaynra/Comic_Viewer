@@ -93,6 +93,34 @@ class _HeroHeader extends ConsumerWidget {
       ),
       actions: [
         IconButton(
+          icon: Icon(
+            series.isVaulted
+                ? Symbols.lock_open
+                : Symbols.lock,
+            color: series.isVaulted
+                ? AppColors.primary
+                : AppColors.onSurface,
+          ),
+          onPressed: () async {
+            await ref.read(seriesRepositoryProvider).toggleVault(series.id);
+            ref.invalidate(allSeriesProvider);
+            ref.invalidate(vaultedSeriesProvider);
+            ref.invalidate(isVaultedProvider(series.id));
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    series.isVaulted
+                        ? 'Dihapus dari Vault'
+                        : 'Dipindah ke Vault',
+                  ),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          },
+        ),
+        IconButton(
           icon: const Icon(Symbols.search),
           onPressed: () {},
         ),

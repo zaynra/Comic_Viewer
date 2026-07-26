@@ -20,126 +20,130 @@ class HistoryPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceContainerLowest,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            GlassAppBar(
-              title: Text('Recent Activity', style: AppTextStyles.headlineMd),
-              leading: GestureDetector(
-                onTap: () => context.go('/'),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: AppRadius.pill,
+            Column(
+              children: [
+                GlassAppBar(
+                  title: Text('Recent Activity', style: AppTextStyles.headlineMd),
+                  leading: GestureDetector(
+                    onTap: () => context.go('/'),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerHigh,
+                        borderRadius: AppRadius.pill,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppColors.onSurfaceVariant,
+                        size: 20,
+                      ),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: AppColors.onSurfaceVariant,
-                    size: 20,
-                  ),
+                  actions: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerHigh,
+                        borderRadius: AppRadius.pill,
+                      ),
+                      child: const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.onSurfaceVariant,
+                        size: 20,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              actions: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: AppRadius.pill,
-                  ),
-                  child: const Icon(
-                    Icons.search_rounded,
-                    color: AppColors.onSurfaceVariant,
-                    size: 20,
+                Expanded(
+                  child: historyAsync.when(
+                    data: (groups) {
+                      if (groups.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.history_rounded,
+                                size: 64,
+                                color: AppColors.outline,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                'No recent activity',
+                                style: AppTextStyles.titleLg.copyWith(
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                'Start reading to see your history here',
+                                style: AppTextStyles.bodyMd.copyWith(
+                                  color: AppColors.outline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.md,
+                        ),
+                        itemCount: groups.length,
+                        itemBuilder: (context, groupIndex) {
+                          final group = groups[groupIndex];
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: AppSpacing.xs,
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: Text(
+                                  group.label,
+                                  style: AppTextStyles.titleLg.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              ...group.items.map(
+                                (item) => Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppSpacing.sm,
+                                  ),
+                                  child: _HistoryCard(
+                                    item: item,
+                                    onTap: () {
+                                      context.push('/reader', extra: item.chapter);
+                                    },
+                                  ),
+                                ),
+                              ),
+                              if (groupIndex < groups.length - 1)
+                                const SizedBox(height: AppSpacing.lg),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(color: AppColors.primary),
+                    ),
+                    error: (error, stack) => Center(
+                      child: Text(
+                        'Error loading history',
+                        style: AppTextStyles.bodyLg.copyWith(color: AppColors.error),
+                      ),
+                    ),
                   ),
                 ),
               ],
-            ),
-            Expanded(
-              child: historyAsync.when(
-                data: (groups) {
-                  if (groups.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.history_rounded,
-                            size: 64,
-                            color: AppColors.outline,
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Text(
-                            'No recent activity',
-                            style: AppTextStyles.titleLg.copyWith(
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            'Start reading to see your history here',
-                            style: AppTextStyles.bodyMd.copyWith(
-                              color: AppColors.outline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.md,
-                    ),
-                    itemCount: groups.length,
-                    itemBuilder: (context, groupIndex) {
-                      final group = groups[groupIndex];
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: AppSpacing.xs,
-                              bottom: AppSpacing.sm,
-                            ),
-                            child: Text(
-                              group.label,
-                              style: AppTextStyles.titleLg.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                          ...group.items.map(
-                            (item) => Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppSpacing.sm,
-                              ),
-                              child: _HistoryCard(
-                                item: item,
-                                onTap: () {
-                                  context.push('/reader', extra: item.chapter);
-                                },
-                              ),
-                            ),
-                          ),
-                          if (groupIndex < groups.length - 1)
-                            const SizedBox(height: AppSpacing.lg),
-                        ],
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
-                error: (error, stack) => Center(
-                  child: Text(
-                    'Error loading history',
-                    style: AppTextStyles.bodyLg.copyWith(color: AppColors.error),
-                  ),
-                ),
-              ),
             ),
             GlassBottomNav(
               currentIndex: 1,

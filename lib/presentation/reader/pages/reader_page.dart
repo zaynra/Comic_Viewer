@@ -153,7 +153,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
   }
 
   Future<void> _saveProgress() async {
-    if (_renderer.hasDocument) {
+    if (!mounted || !_renderer.hasDocument) return;
+    try {
       final progress = ReadingProgress(
         id: _savedProgress?.id ?? 0,
         chapterId: widget.chapter.id,
@@ -162,7 +163,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
         lastOpenedAt: DateTime.now(),
       );
       await ref.read(readingProgressRepositoryProvider).saveProgress(progress);
-    }
+    } catch (_) {}
   }
 
   Future<void> _checkBookmark() async {

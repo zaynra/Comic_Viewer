@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +10,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/providers/data_providers.dart';
-import '../../../domain/entities/chapter.dart';
 import '../../../domain/entities/series.dart';
 import '../../../infrastructure/services/library_scanner.dart';
 import '../../shared/widgets/widgets.dart';
@@ -176,16 +176,18 @@ class _LibraryView extends ConsumerStatefulWidget {
 
 class _LibraryViewState extends ConsumerState<_LibraryView> {
   int _selectedTab = 0;
-  final _tabs = ['All Items', 'Folders', 'Recent', 'Favorites'];
+  bool _vaultUnlocked = false;
+  final _tabs = ['All Items', 'Recent', 'Vault'];
 
   @override
   Widget build(BuildContext context) {
-    final seriesAsync = ref.watch(allSeriesProvider);
     final scanState = ref.watch(scanNotifierProvider);
 
     ref.listen<AsyncValue<ScanResult?>>(scanNotifierProvider, (prev, next) {
       if (prev?.value == null && next.value != null) {
         ref.invalidate(allSeriesProvider);
+        ref.invalidate(recentSeriesProvider);
+        ref.invalidate(vaultedSeriesProvider);
       }
     });
 
@@ -193,71 +195,35 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
       children: [
         CustomScrollView(
           slivers: [
-            // Top App Bar
             SliverToBoxAdapter(
               child: _GlassTopBar(
                 folderPath: widget.folderPath,
                 scanState: scanState,
+                onAddFolder: () => _addFolderToLibrary(ref),
               ),
             ),
-
-            // Filter Tabs
             SliverToBoxAdapter(
               child: _FilterTabs(
                 tabs: _tabs,
                 selectedIndex: _selectedTab,
-                onTap: (index) => setState(() => _selectedTab = index),
-              ),
-            ),
-
-            // Content
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                120, // Space for bottom nav
-              ),
-              sliver: seriesAsync.when(
-                data: (series) {
-                  if (series.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: _EmptyState(
-                        onRefresh: () async {
-                          await ref.read(scanNotifierProvider.notifier).scanFolder(widget.folderPath);
-                          ref.invalidate(allSeriesProvider);
-                        },
-                      ),
-                    );
+                onTap: (index) {
+                  if (index == 2 && !_vaultUnlocked) {
+                    _showPinDialog();
+                  } else {
+                    setState(() => _selectedTab = index);
                   }
-
-                  return SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: AppSpacing.md,
-                      crossAxisSpacing: AppSpacing.md,
-                      childAspectRatio: 0.65,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _ComicCard(series: series[index]),
-                      childCount: series.length,
-                    ),
-                  );
                 },
-                loading: () => const SliverToBoxAdapter(
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
-                ),
-                error: (e, _) => SliverToBoxAdapter(
-                  child: Center(child: Text('Error: $e')),
-                ),
               ),
             ),
+            if (_selectedTab == 0)
+              _buildAllItemsSliver(ref)
+            else if (_selectedTab == 1)
+              _buildRecentSliver(ref)
+            else
+              _buildVaultSliver(ref),
+            const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
           ],
         ),
-
-        // Bottom Navigation
         GlassBottomNav(
           currentIndex: 0,
           onTap: (index) {
@@ -285,13 +251,375 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
       ],
     );
   }
+
+  Widget _buildAllItemsSliver(WidgetRef ref) {
+    final seriesAsync = ref.watch(allSeriesProvider);
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
+      ),
+      sliver: seriesAsync.when(
+        data: (series) {
+          if (series.isEmpty) {
+            return SliverToBoxAdapter(
+              child: _EmptyState(
+                onRefresh: () async {
+                  await ref.read(scanNotifierProvider.notifier).scanFolder(widget.folderPath);
+                  ref.invalidate(allSeriesProvider);
+                },
+              ),
+            );
+          }
+          return _ShelfGrid(series: series);
+        },
+        loading: () => const SliverToBoxAdapter(
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (e, _) => SliverToBoxAdapter(
+          child: Center(child: Text('Error: $e')),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentSliver(WidgetRef ref) {
+    final recentAsync = ref.watch(recentSeriesProvider);
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
+      ),
+      sliver: recentAsync.when(
+        data: (series) {
+          if (series.isEmpty) {
+            return SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.history_rounded,
+                        size: 48,
+                        color: AppColors.outline,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      const Text(
+                        'Tidak ada aktivitas terbaru',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+          return _ShelfGrid(series: series);
+        },
+        loading: () => const SliverToBoxAdapter(
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (e, _) => SliverToBoxAdapter(
+          child: Center(child: Text('Error: $e')),
+        ),
+      ),
+    );
+  }
+
+  void _showPinDialog() {
+    final controllers = List.generate(4, (_) => TextEditingController());
+    final focusNodes = List.generate(4, (_) => FocusNode());
+    String? error;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: AppColors.surfaceContainer,
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusLg),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline_rounded,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Masukkan PIN Vault',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Masukkan PIN 4 digit untuk akses Vault',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(4, (i) {
+                        return Container(
+                          width: 52,
+                          height: 56,
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh,
+                            borderRadius: AppRadius.radiusMd,
+                            border: Border.all(
+                              color: error != null
+                                  ? AppColors.error
+                                  : AppColors.outlineVariant.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: TextField(
+                            controller: controllers[i],
+                            focusNode: focusNodes[i],
+                            textAlign: TextAlign.center,
+                            obscureText: true,
+                            keyboardType: TextInputType.number,
+                            maxLength: 1,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurface,
+                            ),
+                            decoration: const InputDecoration(
+                              counterText: '',
+                              border: InputBorder.none,
+                            ),
+                            onChanged: (value) {
+                              if (value.isNotEmpty && i < 3) {
+                                focusNodes[i + 1].requestFocus();
+                              }
+                              if (value.isEmpty && i > 0) {
+                                focusNodes[i - 1].requestFocus();
+                              }
+                              if (controllers.every((c) => c.text.isNotEmpty)) {
+                                final pin = controllers.map((c) => c.text).join();
+                                if (pin == '2305') {
+                                  Navigator.pop(context);
+                                  setState(() {
+                                    _vaultUnlocked = true;
+                                    _selectedTab = 2;
+                                  });
+                                } else {
+                                  setDialogState(() => error = 'PIN salah');
+                                  for (final c in controllers) {
+                                    c.clear();
+                                  }
+                                  focusNodes[0].requestFocus();
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      }),
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        error!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.surfaceContainerHigh,
+                        ),
+                        child: const Text('Batal'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildVaultSliver(WidgetRef ref) {
+    final vaultedAsync = ref.watch(vaultedSeriesProvider);
+    return vaultedAsync.when(
+      data: (series) {
+        if (series.isEmpty) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainer,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.glassBorderSubtle),
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline_rounded,
+                        size: 48,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const Text(
+                      'Vault kosong',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Text(
+                      'Pilih folder untuk menambahkan komik ke Vault',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    PrimaryButton(
+                      label: 'Pilih Folder untuk Vault',
+                      icon: Icons.folder_open,
+                      onPressed: () => _pickVaultFolder(ref),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+        return SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            0,
+          ),
+          sliver: _ShelfGrid(series: series),
+        );
+      },
+      loading: () => const SliverFillRemaining(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      ),
+      error: (e, _) => SliverFillRemaining(
+        child: Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Future<void> _pickVaultFolder(WidgetRef ref) async {
+    final result = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Pilih folder untuk Vault',
+    );
+    if (result == null) return;
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Memindai folder untuk Vault...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    await ref.read(scanNotifierProvider.notifier).scanFolder(result);
+
+    final repo = ref.read(seriesRepositoryProvider);
+    final allSeries = await repo.getAllSeries();
+    for (final s in allSeries) {
+      if (!s.isVaulted && s.path.startsWith(result)) {
+        await repo.toggleVault(s.id);
+      }
+    }
+    ref.invalidate(vaultedSeriesProvider);
+    ref.invalidate(allSeriesProvider);
+    ref.invalidate(recentSeriesProvider);
+  }
+
+  Future<void> _addFolderToLibrary(WidgetRef ref) async {
+    final result = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Tambah folder komik',
+    );
+    if (result == null) return;
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Memindai folder baru...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    await ref.read(scanNotifierProvider.notifier).scanFolder(result);
+    ref.invalidate(allSeriesProvider);
+    ref.invalidate(recentSeriesProvider);
+    ref.invalidate(vaultedSeriesProvider);
+  }
 }
 
 class _GlassTopBar extends StatelessWidget {
-  const _GlassTopBar({required this.folderPath, required this.scanState});
+  const _GlassTopBar({
+    required this.folderPath,
+    required this.scanState,
+    required this.onAddFolder,
+  });
 
   final String folderPath;
   final AsyncValue<ScanResult?> scanState;
+  final VoidCallback onAddFolder;
 
   @override
   Widget build(BuildContext context) {
@@ -312,6 +640,16 @@ class _GlassTopBar extends StatelessWidget {
               width: 32,
               height: 32,
               fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Center(
+                child: Text(
+                  'OR',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -325,7 +663,7 @@ class _GlassTopBar extends StatelessWidget {
           ),
           const Spacer(),
           IconButton(
-            onPressed: () {},
+            onPressed: onAddFolder,
             icon: const Icon(
               Icons.create_new_folder_outlined,
               color: AppColors.onSurfaceVariant,
@@ -405,8 +743,87 @@ class _FilterTabs extends StatelessWidget {
   }
 }
 
-class _ComicCard extends ConsumerWidget {
-  const _ComicCard({required this.series});
+class _ShelfGrid extends StatelessWidget {
+  const _ShelfGrid({required this.series});
+
+  final List<Series> series;
+
+  @override
+  Widget build(BuildContext context) {
+    const int columnsPerRow = 2;
+    const double spacing = AppSpacing.md;
+    const double padding = AppSpacing.md;
+    final int rowCount = (series.length / columnsPerRow).ceil();
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, rowIndex) {
+          final int startIndex = rowIndex * columnsPerRow;
+          final int endIndex = (startIndex + columnsPerRow).clamp(0, series.length);
+          final rowSeries = series.sublist(startIndex, endIndex);
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: (MediaQuery.of(context).size.width - padding * 2 - spacing) / 2 * 1.5,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (int i = 0; i < rowSeries.length; i++) ...[
+                        Expanded(
+                          child: _BookCard(series: rowSeries[i]),
+                        ),
+                        if (i < rowSeries.length - 1)
+                          const SizedBox(width: spacing),
+                      ],
+                      if (rowSeries.length < columnsPerRow)
+                        for (int i = rowSeries.length; i < columnsPerRow; i++) ...[
+                          const Expanded(child: SizedBox()),
+                          if (i < columnsPerRow - 1)
+                            const SizedBox(width: spacing),
+                        ],
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 6,
+                  margin: const EdgeInsets.only(top: 4, bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHighest,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(4),
+                      bottomRight: Radius.circular(4),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: const Border(
+                      top: BorderSide(
+                        color: Colors.white10,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        childCount: rowCount,
+      ),
+    );
+  }
+}
+
+class _BookCard extends ConsumerWidget {
+  const _BookCard({required this.series});
 
   final Series series;
 
@@ -417,78 +834,142 @@ class _ComicCard extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () => context.pushNamed('series_detail', extra: series),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Thumbnail
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: AppRadius.comic,
-                border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                  width: 0.5,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.comic,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.comic,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              thumbnailAsync.when(
+                data: (thumbnail) {
+                  if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
+                    return Image.file(
+                      File(thumbnail.filePath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _PlaceholderCover(),
+                    );
+                  }
+                  return _PlaceholderCover();
+                },
+                loading: () => _PlaceholderCover(),
+                error: (_, __) => _PlaceholderCover(),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.0),
+                        Colors.black.withValues(alpha: 0.2),
+                        Colors.black.withValues(alpha: 0.8),
+                      ],
+                      stops: const [0.0, 0.4, 1.0],
+                    ),
+                  ),
                 ),
               ),
-              child: ClipRRect(
-                borderRadius: AppRadius.comic,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    thumbnailAsync.when(
-                      data: (thumbnail) {
-                        if (thumbnail != null && File(thumbnail.filePath).existsSync()) {
-                          return Image.file(
-                            File(thumbnail.filePath),
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _PlaceholderCover(),
-                          );
-                        }
-                        return _PlaceholderCover();
-                      },
-                      loading: () => _PlaceholderCover(),
-                      error: (_, __) => _PlaceholderCover(),
-                    ),
-                    // Progress bar at bottom
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: _ProgressBar(chaptersAsync: chaptersAsync),
-                    ),
-                  ],
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        series.name,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black54,
+                              blurRadius: 4,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: chaptersAsync.when(
+                              data: (chapters) {
+                                if (chapters.isEmpty) return const SizedBox.shrink();
+                                final readCount = chapters.where((c) => c.isRead).length;
+                                final progress = readCount / chapters.length;
+                                return Container(
+                                  height: 3,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white24,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                  child: FractionallySizedBox(
+                                    alignment: Alignment.centerLeft,
+                                    widthFactor: progress.clamp(0.0, 1.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary,
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              loading: () => const SizedBox.shrink(),
+                              error: (_, __) => const SizedBox.shrink(),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          chaptersAsync.when(
+                            data: (chapters) {
+                              if (chapters.isEmpty) return const SizedBox.shrink();
+                              final readCount = chapters.where((c) => c.isRead).length;
+                              final progress = readCount / chapters.length;
+                              final percent = (progress * 100).round();
+                              return Text(
+                                '$percent%',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white70,
+                                ),
+                              );
+                            },
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, __) => const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          // Title
-          Text(
-            series.name,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.onSurface,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          // Chapter count
-          chaptersAsync.when(
-            data: (chapters) => Text(
-              '${chapters.length} chapter',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.05,
-                color: AppColors.outline,
-              ),
-            ),
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -505,46 +986,6 @@ class _PlaceholderCover extends StatelessWidget {
           size: 48,
           color: AppColors.onSurfaceVariant,
         ),
-      ),
-    );
-  }
-}
-
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.chaptersAsync});
-
-  final AsyncValue<List<Chapter>> chaptersAsync;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 6,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHighest.withValues(alpha: 0.8),
-      ),
-      child: chaptersAsync.when(
-        data: (chapters) {
-          if (chapters.isEmpty) return const SizedBox.shrink();
-          final readCount = chapters.where((c) => c.isRead).length;
-          final progress = readCount / chapters.length;
-          return FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: progress,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGlow.withValues(alpha: 0.6),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-        loading: () => const SizedBox.shrink(),
-        error: (_, __) => const SizedBox.shrink(),
       ),
     );
   }

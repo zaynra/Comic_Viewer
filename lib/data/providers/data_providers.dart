@@ -150,3 +150,15 @@ final scanNotifierProvider =
   final scanner = ref.watch(libraryScannerProvider);
   return ScanNotifier(scanner);
 });
+
+final vaultedSeriesProvider = FutureProvider<List<Series>>((ref) async {
+  final repo = ref.watch(seriesRepositoryProvider);
+  return repo.getVaultedSeries();
+});
+
+final isVaultedProvider =
+    FutureProvider.family<bool, int>((ref, seriesId) async {
+  final repo = ref.watch(seriesRepositoryProvider);
+  final series = await repo.getSeriesById(seriesId);
+  return series?.isVaulted ?? false;
+});

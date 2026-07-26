@@ -6,7 +6,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const _dbName = 'comic_viewer.db';
-  static const _dbVersion = 6;
+  static const _dbVersion = 7;
 
   Database? _database;
 
@@ -90,6 +90,13 @@ class AppDatabase {
       ''');
       await db.execute('CREATE INDEX idx_bookmarks_chapter ON bookmarks(chapter_id)');
     }
+    if (oldVersion < 7) {
+      try {
+        await db.execute(
+            'ALTER TABLE series ADD COLUMN is_vaulted INTEGER DEFAULT 0');
+      } catch (_) {
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -102,6 +109,7 @@ class AppDatabase {
         author TEXT,
         description TEXT,
         genres TEXT,
+        is_vaulted INTEGER DEFAULT 0,
         created_at INTEGER NOT NULL
       )
     ''');

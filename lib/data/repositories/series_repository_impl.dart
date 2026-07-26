@@ -8,7 +8,8 @@ class SeriesRepositoryImpl implements SeriesRepository {
   @override
   Future<List<Series>> getAllSeries() async {
     final db = await _db.database;
-    final maps = await db.query('series', orderBy: 'name ASC');
+    final maps = await db.query('series',
+        where: 'is_vaulted = 0', orderBy: 'name ASC');
     return maps.map((map) => Series.fromMap(map)).toList();
   }
 
@@ -26,6 +27,14 @@ class SeriesRepositoryImpl implements SeriesRepository {
     final maps = await db.query('series', where: 'path = ?', whereArgs: [path]);
     if (maps.isEmpty) return null;
     return Series.fromMap(maps.first);
+  }
+
+  @override
+  Future<List<Series>> getVaultedSeries() async {
+    final db = await _db.database;
+    final maps = await db.query('series',
+        where: 'is_vaulted = 1', orderBy: 'name ASC');
+    return maps.map((map) => Series.fromMap(map)).toList();
   }
 
   @override
@@ -54,5 +63,18 @@ class SeriesRepositoryImpl implements SeriesRepository {
     } else {
       await insertSeries(series);
     }
+  }
+
+  @override
+  Future<void> toggleVault(int seriesId) async {
+    final db = await _db.database;
+    final maps = await db.query('series',
+        where: 'id = ?', whereArgs: [seriesId]);
+    if (maps.isEmpty) return;
+    final series = Series.fromMap(maps.first);
+    final newState = series.isVaulted ? 0 : 1;
+    await db.rawUpdate(
+        'UPDATE series SET is_vaulted = ? WHERE id = ?',
+        [newState, seriesId]);
   }
 }
