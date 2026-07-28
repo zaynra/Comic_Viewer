@@ -137,8 +137,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
         return 1.0;
       case RenderScale.scale150:
         return 1.5;
-      case RenderScale.scale200:
-        return 2.0;
     }
   }
 

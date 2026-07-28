@@ -51,7 +51,8 @@ lib/
 - ❌ JANGAN push/commit ke branch `backup` — backup hanya untuk referensi
 - ❌ **JANGAN lupa cascade delete chapters saat `deleteSeries`** — lihat Bug #1 di SCREEN_SPEC.md
 - ❌ **JANGAN ubah operator `==` Chapter tanpa include `seriesId`** — menyebabkan orphan chapters
-- ❌ **JANGAN ubah render scale default dari 150%** — index 1 di RenderScale enum
+- ❌ **JANGAN tambah scale200 ke RenderScale** — hanya 100% dan 150%, dua opsi saja
+- ❌ **RenderScale default 100% (index 0)** — jangan ubah ke index 1
 - ❌ **JANGAN hapus `_getPdfPageCount()`** — menyebabkan totalPages selalu 0
 
 ### DO

@@ -26,9 +26,8 @@ enum OrientationMode {
 }
 
 enum RenderScale {
-  scale100('100% (Normal)'),
-  scale150('150% (Cepat)'),
-  scale200('200% (Tajam)');
+  scale100('100%'),
+  scale150('150%');
 
   const RenderScale(this.label);
   final String label;
@@ -121,7 +120,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final readingModeIndex = _prefs.getInt('reading_mode') ?? 0;
     final fitModeIndex = _prefs.getInt('fit_mode') ?? 0;
     final orientationIndex = _prefs.getInt('orientation_mode') ?? 0;
-    final renderScaleIndex = _prefs.getInt('render_scale') ?? 1; // default 150%
+    final renderScaleIndex = _prefs.getInt('render_scale') ?? 0; // default 100%
     final thumbnailSourceIndex = _prefs.getInt('thumbnail_source') ?? 0;
     final keepScreenOn = _prefs.getBool('keep_screen_on') ?? true;
     final readingBrightness = _prefs.getDouble('reading_brightness') ?? 1.0;
