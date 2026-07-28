@@ -77,33 +77,50 @@ lib/
 - **Widget barrel:** `lib/presentation/shared/widgets/widgets.dart` — export semua shared widgets
 - **Launcher Icon:** OR logo (assets/images/or_logo.png), adaptive icon dark bg #060E20
 
-## Current Development Phase: Phase 5 — UI Stabilization & Vault
+## Current Development Phase: Phase 11 — All TODO Items Complete
 
 ### Completed
-- [x] Vault feature: `isVaulted` field, PIN dialog (2305), vault tab, toggle vault from series detail
+- [x] **Vault Flat PDF Mode**: Vault scan folder langsung untuk `*.pdf`, setiap PDF = 1 shelf item, tap → reader langsung. Tidak pakai Series/Chapter model
+- [x] Vault folder path disimpan di SharedPreferences, auto-load di initState
+- [x] **Render Scale**: tambah opsi `100% (Normal)` sebagai default, wiring ke renderer
+- [x] **Slow Loading Fixes**:
+  - `cacheExtent: 800` di ListView.builder
+  - 3 fase loading concurrent (thumb/lowRes/highRes jalan bersamaan)
+  - Thumbnail prefetch di initial + scroll
+  - Fix `prefetchHighRes` key bug (sekarang benar cache highRes)
+  - Estimasi awal `_avgPageHeight` pakai `screenWidth * 1.4`
+- [x] `isVaulted` field, PIN dialog (2305), vault tab, toggle vault from series detail
 - [x] Shelf layout: `_ShelfGrid` + `_BookCard` replacing `SliverGrid` + `_ComicCard`
-- [x] All Items, Recent, Vault tabs use shelf layout (rak buku 2 kolom + shelf divider)
+- [x] All Items, Recent tabs use shelf layout (rak buku 2 kolom + shelf divider, vault pakai `_VaultGrid`)
 - [x] Folders tab: `_FolderCard` with folder grouping, glassmorphism
 - [x] ParentDataWidget error fixed: history_page.dart wrapped GlassBottomNav in Stack
-- [x] Add folder button di `_GlassTopBar` → `_addFolderToLibrary()` via FilePicker
-- [x] Vault folder picker → scan + auto-vault semua series di folder terpilih
-- [x] Multi-resolution PDF renderer (3-tier cache: thumbnail 0.5x / lowRes 1.0x / highRes 1.5x-2.0x)
+- [x] Multi-resolution PDF renderer (3-tier cache: thumbnail 0.5x / lowRes 1.0x / highRes 1.0x-2.0x)
 - [x] Background low-res rendering via `compute()` isolate (dengan fallback main thread)
 - [x] Progressive loading (`_ProgressivePageImage`): blurred thumb → low-res → high-res
-- [x] Scroll-based prefetch (visible ±2 lowRes, high-res upgrade after 2s idle)
-- [x] Render Scale setting: 150% (Cepat) / 200% (Tajam)
+- [x] Scroll-based prefetch (visible ±2 lowRes + thumbnail, high-res upgrade after 2s idle)
 - [x] All settings buttons wired to Riverpod notifiers
 - [x] Controls auto-show/tap-to-toggle in reader
 - [x] Image clone fix: clone ui.Image segera setelah diterima — mencegah crash dispose
-- [x] Reader menu bar di bottom: [Prev] [All Files] [Settings] [Next]
-- [x] `_showChapterList()` scan parent folder untuk semua PDF
+- [x] Reader menu bar di bottom: [All Files] [Settings]
 - [x] OR logo applied: splash page, home page top bar
 - [x] Launcher icon: OR logo via flutter_launcher_icons
+- [x] **Search** (3 lokasi): Home, Series Detail, History — semua di-wire ke search dialog + `searchQueryProvider`
+- [x] **Favorite**: Heart toggle di Series Detail + Favorites tab (index 2) di Home
+- [x] **Bookmark**: `bookmark_add` → dialog + `addBookmark()` call
+- [x] **Overflow Menu**: Series Detail + Thumbnail Viewer → bottom sheet dengan opsi
+- [x] **Sort**: Bottom sheet ASC/DESC di Series Detail
+- [x] **Settings View Mode**: Dari static → interactive bottom sheet dengan `FitMode`
+- [x] **Settings Scroll Mode**: Dari static → interactive bottom sheet dengan `ReadingMode`
+- [x] **Settings Info Tiles**: Version + Built with → AlertDialog info
+- [x] **`_ActionButtons`**: Dari `SizedBox.shrink()` → Resume + Read from Beginning dengan navigasi
+- [x] **History search icon**: Container → GestureDetector + search dialog
+- [x] **Thumbnail viewer icons**: Settings + More → GestureDetector + bottom sheet
 - [x] `flutter analyze` = 0 errors
 
 ### Pending
 - [ ] Performance benchmarks: cold start <200ms, scroll 60fps, RAM <150MB
-- [ ] Test scenarios: fast scroll, chapter change, settings change
+- [ ] Build APK release verification
+- [ ] Test scenarios: fast scroll, chapter change, vault open, settings change
 
 ## Key Files Reference
 | File | Purpose |

@@ -179,129 +179,100 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildViewModeSection(SettingsState settings) {
-
-    return _SettingsSection(
-      title: 'View Mode',
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHigh,
-          borderRadius: AppRadius.radiusLg,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.fit_screen,
-              color: AppColors.primary,
-              size: 28,
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Fit Width',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
+    return GestureDetector(
+      onTap: () => _showViewModeDialog(settings.fitMode),
+      child: _SettingsSection(
+        title: 'View Mode',
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHigh,
+            borderRadius: AppRadius.radiusLg,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.fit_screen, color: AppColors.primary, size: 28),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      settings.fitMode.label,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Optimal untuk webtoon vertical scroll',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.onSurfaceVariant,
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Optimal untuk webtoon vertical scroll',
+                      style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3),
+                  ],
                 ),
               ),
-              child: Text(
-                'Active',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  'Active',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildScrollModeSection(SettingsState settings) {
-    return _SettingsSection(
-      title: 'Scroll Mode',
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHigh,
-          borderRadius: AppRadius.radiusLg,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.swap_vert,
-              color: AppColors.primary,
-              size: 28,
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Vertical Scroll',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
+    return GestureDetector(
+      onTap: () => _showScrollModeDialog(settings.readingMode),
+      child: _SettingsSection(
+        title: 'Scroll Mode',
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHigh,
+            borderRadius: AppRadius.radiusLg,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.swap_vert, color: AppColors.primary, size: 28),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      settings.readingMode.label,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Webtoon-style continuous scroll',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.onSurfaceVariant,
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Webtoon-style continuous scroll',
+                      style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3),
+                  ],
                 ),
               ),
-              child: Text(
-                'Active',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  'Active',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -394,13 +365,55 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             icon: Icons.info_outline,
             title: 'Version',
             subtitle: '0.2.0',
-            onTap: () {},
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: AppColors.surfaceContainer,
+                  title: const Text('Omnivious Reader'),
+                  content: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Versi: 0.2.0', style: TextStyle(color: AppColors.onSurface)),
+                      SizedBox(height: 4),
+                      Text('Phase 6 — Vault Flat PDF Mode', style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup')),
+                  ],
+                ),
+              );
+            },
           ),
           _NavigationTile(
             icon: Icons.code_outlined,
             title: 'Built with',
             subtitle: 'Flutter + Riverpod',
-            onTap: () {},
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: AppColors.surfaceContainer,
+                  title: const Text('Tech Stack'),
+                  content: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Flutter', style: TextStyle(color: AppColors.onSurface)),
+                      Text('Dart', style: TextStyle(color: AppColors.onSurface)),
+                      Text('Riverpod — State Management', style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                      Text('SQLite (sqflite) — Database', style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                      Text('pdfx — PDF Rendering', style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup')),
+                  ],
+                ),
+              );
+            },
             showDivider: false,
           ),
         ],
@@ -439,6 +452,64 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ref
                       .read(settingsProvider.notifier)
                       .setReadingDirection(direction);
+                  Navigator.of(context).pop();
+                },
+              );
+            }),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showViewModeDialog(FitMode current) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => GlassBottomSheet(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('View Mode', style: AppTextStyles.titleLg),
+            const SizedBox(height: AppSpacing.md),
+            ...FitMode.values.map((mode) {
+              final isSelected = mode == current;
+              return ListTile(
+                title: Text(mode.label,
+                  style: TextStyle(color: isSelected ? AppColors.primary : AppColors.onSurface)),
+                trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setFitMode(mode);
+                  Navigator.of(context).pop();
+                },
+              );
+            }),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showScrollModeDialog(ReadingMode current) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => GlassBottomSheet(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Scroll Mode', style: AppTextStyles.titleLg),
+            const SizedBox(height: AppSpacing.md),
+            ...ReadingMode.values.map((mode) {
+              final isSelected = mode == current;
+              return ListTile(
+                title: Text(mode.label,
+                  style: TextStyle(color: isSelected ? AppColors.primary : AppColors.onSurface)),
+                trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setReadingMode(mode);
                   Navigator.of(context).pop();
                 },
               );

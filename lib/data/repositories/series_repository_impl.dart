@@ -52,6 +52,7 @@ class SeriesRepositoryImpl implements SeriesRepository {
   @override
   Future<void> deleteSeries(int id) async {
     final db = await _db.database;
+    await db.delete('chapters', where: 'series_id = ?', whereArgs: [id]);
     await db.delete('series', where: 'id = ?', whereArgs: [id]);
   }
 

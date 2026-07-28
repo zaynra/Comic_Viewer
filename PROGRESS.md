@@ -1,8 +1,10 @@
 # Omnivious Reader - Development Progress
 
-## Current Phase: MVP Complete (Phase 0–10) ✅
+## Current Phase: Phase 11 — Vault Flat PDF Mode & Performance ✅
 
 ---
+
+## Phase 0 — Skeleton ✅
 
 ## Phase 0 — Skeleton ✅
 **Completed:** 2026-07-24
@@ -121,6 +123,66 @@
 - Auto-parse `metadata.json` in series folder
 - Auto-parse `Chapter_XXXX.json` for individual chapters
 - Database schema v5: added author, description, genres columns to series
+
+---
+
+---
+
+## Phase 11 — Vault Flat PDF Mode & Performance Fixes
+**Completed:** 2026-07-28
+
+### Vault Flat PDF Mode
+- Vault scan folder langsung untuk `*.pdf` (bukan Series/Chapter model)
+- Setiap PDF = 1 item shelf (`_VaultItemCard`), tap → reader langsung
+- Vault folder path disimpan di SharedPreferences, auto-load di initState
+- Tab All Items / Recent / Folders tetap pakai model Series/Chapter — tidak berubah
+
+### Render Scale
+- Tambah opsi `100% (Normal)` sebagai default
+- Wiring: setting sekarang benar-benar memanggil `_renderer.setRenderScale()`
+
+### Slow Loading Fixes
+- `cacheExtent: 800` di ListView.builder — widget dibuat lebih awal
+- 3 fase loading concurrent (thumbnail/lowRes/highRes start bersamaan)
+- Thumbnail prefetch di initial pages + scroll-based prefetch
+- Fix `prefetchHighRes` key bug (`_imageCache.containsKey(index)` → `_cacheKey(index, RenderQuality.highRes)`)
+- Estimasi awal `_avgPageHeight` pakai `screenWidth * 1.4` — scroll prefetch tidak delay
+
+---
+
+## Phase 12 — All TODO Items (Search, Favorite, Bookmark, dll)
+**Completed:** 2026-07-28
+
+### Search (3 lokasi)
+- Home page: Icon search di-wire ke search dialog + `searchQueryProvider`
+- Series Detail: search icon terhubung melalui home search
+- History: GestureDetector + inline search dialog dengan `searchQueryProvider`
+
+### Favorite
+- Series Detail: Heart toggle (filled/outlined) dengan `favoriteSeriesProvider` + `isFavoriteProvider`
+- Home: Favorites tab (index 2, vault geser ke index 3) dengan `_buildFavoritesSliver()`
+
+### Bookmark
+- Series Detail: `bookmark_add` icon → dialog input nama bookmark + `addBookmark()` call via `bookmarkRepositoryProvider`
+
+### Overflow Menu (2 lokasi)
+- Series Detail: `more_vert` → bottom sheet: Vault toggle, Edit Cover, Hapus Series
+- Thumbnail Viewer: `more_vert_rounded` → GestureDetector + bottom sheet opsi
+
+### Sort
+- Series Detail: `Icons.sort` → bottom sheet pilihan Urutkan (Nomor ASC / Nomor DESC)
+
+### Settings — Interactive Controls
+- View Mode: Dari teks "Active" → GestureDetector + bottom sheet pilih `FitMode` (fitWidth, fitHeight, fitBoth)
+- Scroll Mode: Dari teks "Active" → GestureDetector + bottom sheet pilih `ReadingMode` (horizontalLTR, horizontalRTL, vertical)
+- Info Tiles: Version + Built with → AlertDialog informasi detail
+
+### _ActionButtons (Dead Widget Revival)
+- Dari `SizedBox.shrink()` → dua tombol: "Lanjutkan Membaca" (resume) + "Baca dari Awal"
+
+### Thumbnail Viewer Icons
+- Settings icon → GestureDetector + bottom sheet (Regenerate Thumbnails)
+- More icon → GestureDetector + bottom sheet (Detail File)
 
 ---
 

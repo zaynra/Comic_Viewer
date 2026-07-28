@@ -13,7 +13,7 @@ class ThumbnailService {
 
   static const _coverExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
   static const _coverNames = ['cover', 'folder', 'thumb', 'poster'];
-  static const int _thumbnailWidth = 300;
+  static const int _thumbnailWidth = 600;
 
   Future<Thumbnail?> getThumbnail(int seriesId, String seriesPath) async {
     final existing = await _thumbnailRepository.getThumbnailBySeriesId(seriesId);
@@ -181,5 +181,47 @@ class ThumbnailService {
   Future<void> refreshThumbnail(int seriesId, String seriesPath) async {
     await deleteThumbnail(seriesId);
     await getThumbnail(seriesId, seriesPath);
+  }
+
+  Future<String?> getVaultThumbnail(String filePath) async {
+    final file = File(filePath);
+    if (!await file.exists()) return null;
+
+    final thumbDir = Directory(p.join(p.dirname(filePath), '.vault_thumbnails'));
+    if (!await thumbDir.exists()) {
+      await thumbDir.create(recursive: true);
+    }
+
+    final thumbName = 'thumb_${p.basenameWithoutExtension(filePath)}.png';
+    final thumbPath = p.join(thumbDir.path, thumbName);
+
+    if (await File(thumbPath).exists()) return thumbPath;
+
+    try {
+      final document = await PdfDocument.openFile(filePath);
+      if (document.pagesCount > 0) {
+        final page = await document.getPage(1);
+        final scale = _thumbnailWidth / page.width;
+        final renderWidth = _thumbnailWidth.toDouble();
+        final renderHeight = (page.height * scale).roundToDouble();
+
+        final pageImage = await page.render(
+          width: renderWidth,
+          height: renderHeight,
+          format: PdfPageImageFormat.png,
+        );
+        await page.close();
+        await document.close();
+
+        if (pageImage != null) {
+          final thumbFile = File(thumbPath);
+          await thumbFile.writeAsBytes(pageImage.bytes);
+          return thumbPath;
+        }
+      }
+      await document.close();
+    } catch (_) {}
+
+    return null;
   }
 }

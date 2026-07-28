@@ -5,13 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/providers/data_providers.dart';
+import '../../../domain/entities/chapter.dart';
 import '../../../domain/entities/series.dart';
 import '../../../infrastructure/services/library_scanner.dart';
+import '../../settings/providers/settings_provider.dart';
 import '../../shared/widgets/widgets.dart';
 import '../providers/library_folder_providers.dart';
 
@@ -177,7 +180,54 @@ class _LibraryView extends ConsumerStatefulWidget {
 class _LibraryViewState extends ConsumerState<_LibraryView> {
   int _selectedTab = 0;
   bool _vaultUnlocked = false;
-  final _tabs = ['All Items', 'Recent', 'Vault'];
+  final _tabs = ['All Items', 'Recent', 'Favorites', 'Vault'];
+
+  List<_VaultFile> _vaultFiles = [];
+  bool _vaultLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadVaultFolder());
+  }
+
+  Future<void> _loadVaultFolder() async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    final path = prefs.getString('vault_folder_path');
+    if (path != null && path.isNotEmpty) {
+      await _scanVaultFolder(path);
+    }
+  }
+
+  Future<void> _scanVaultFolder(String folderPath) async {
+    setState(() => _vaultLoading = true);
+    final dir = Directory(folderPath);
+    if (!dir.existsSync()) {
+      if (mounted) setState(() => _vaultLoading = false);
+      return;
+    }
+
+    final files = <_VaultFile>[];
+    try {
+      final entities = dir.listSync(recursive: true);
+      for (final entity in entities) {
+        if (entity is File && p.extension(entity.path).toLowerCase() == '.pdf') {
+          files.add(_VaultFile(
+            name: p.basenameWithoutExtension(entity.path),
+            path: entity.path,
+          ));
+        }
+      }
+    } catch (_) {}
+
+    files.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    if (mounted) {
+      setState(() {
+        _vaultFiles = files;
+        _vaultLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,6 +250,7 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
                 folderPath: widget.folderPath,
                 scanState: scanState,
                 onAddFolder: () => _addFolderToLibrary(ref),
+                onSearch: () => _showSearchDialog(ref),
               ),
             ),
             SliverToBoxAdapter(
@@ -207,7 +258,7 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
                 tabs: _tabs,
                 selectedIndex: _selectedTab,
                 onTap: (index) {
-                  if (index == 2 && !_vaultUnlocked) {
+                  if (index == 3 && !_vaultUnlocked) {
                     _showPinDialog();
                   } else {
                     setState(() => _selectedTab = index);
@@ -219,6 +270,8 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
               _buildAllItemsSliver(ref)
             else if (_selectedTab == 1)
               _buildRecentSliver(ref)
+            else if (_selectedTab == 2)
+              _buildFavoritesSliver(ref)
             else
               _buildVaultSliver(ref),
             const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
@@ -332,6 +385,44 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
           child: Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           ),
+        ),
+        error: (e, _) => SliverToBoxAdapter(
+          child: Center(child: Text('Error: $e')),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFavoritesSliver(WidgetRef ref) {
+    final favoritesAsync = ref.watch(favoriteSeriesProvider);
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
+      sliver: favoritesAsync.when(
+        data: (series) {
+          if (series.isEmpty) {
+            return SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.favorite_outline_rounded, size: 48, color: AppColors.outline),
+                      const SizedBox(height: AppSpacing.md),
+                      const Text(
+                        'Belum ada favorit',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+          return _ShelfGrid(series: series);
+        },
+        loading: () => const SliverToBoxAdapter(
+          child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
         ),
         error: (e, _) => SliverToBoxAdapter(
           child: Center(child: Text('Error: $e')),
@@ -483,82 +574,158 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
   }
 
   Widget _buildVaultSliver(WidgetRef ref) {
-    final vaultedAsync = ref.watch(vaultedSeriesProvider);
-    return vaultedAsync.when(
-      data: (series) {
-        if (series.isEmpty) {
-          return SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainer,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.glassBorderSubtle),
-                      ),
-                      child: const Icon(
-                        Icons.lock_outline_rounded,
-                        size: 48,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    const Text(
-                      'Vault kosong',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    const Text(
-                      'Pilih folder untuk menambahkan komik ke Vault',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    PrimaryButton(
-                      label: 'Pilih Folder untuk Vault',
-                      icon: Icons.folder_open,
-                      onPressed: () => _pickVaultFolder(ref),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-        return SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            0,
-          ),
-          sliver: _ShelfGrid(series: series),
-        );
-      },
-      loading: () => const SliverFillRemaining(
+    if (_vaultLoading) {
+      return const SliverFillRemaining(
         child: Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
+      );
+    }
+
+    if (_vaultFiles.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainer,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.glassBorderSubtle),
+                  ),
+                  child: const Icon(
+                    Icons.lock_outline_rounded,
+                    size: 48,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                const Text(
+                  'Vault kosong',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const Text(
+                  'Pilih folder untuk menambahkan komik ke Vault',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                PrimaryButton(
+                  label: 'Pilih Folder untuk Vault',
+                  icon: Icons.folder_open,
+                  onPressed: () => _pickVaultFolder(ref),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
       ),
-      error: (e, _) => SliverFillRemaining(
-        child: Center(child: Text('Error: $e')),
+      sliver: _buildVaultGrid(),
+    );
+  }
+
+  Widget _buildVaultGrid() {
+    const int columnsPerRow = 2;
+    const double spacing = AppSpacing.md;
+    const double padding = AppSpacing.md;
+    final int rowCount = (_vaultFiles.length / columnsPerRow).ceil();
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, rowIndex) {
+          final int startIndex = rowIndex * columnsPerRow;
+          final int endIndex = (startIndex + columnsPerRow).clamp(0, _vaultFiles.length);
+          final rowFiles = _vaultFiles.sublist(startIndex, endIndex);
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: (MediaQuery.of(context).size.width - padding * 2 - spacing) / 2 * 1.5,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (int i = 0; i < rowFiles.length; i++) ...[
+                      Expanded(
+                        child: _VaultItemCard(
+                          file: rowFiles[i],
+                          onTap: () => _openVaultFile(rowFiles[i]),
+                        ),
+                      ),
+                      if (i < rowFiles.length - 1)
+                        const SizedBox(width: spacing),
+                    ],
+                    if (rowFiles.length < columnsPerRow)
+                      for (int i = rowFiles.length; i < columnsPerRow; i++) ...[
+                        const Expanded(child: SizedBox()),
+                        if (i < columnsPerRow - 1)
+                          const SizedBox(width: spacing),
+                      ],
+                  ],
+                ),
+              ),
+              Container(
+                height: 6,
+                margin: const EdgeInsets.only(top: 4, bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHighest,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(4),
+                    bottomRight: Radius.circular(4),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: const Border(
+                    top: BorderSide(color: Colors.white10, width: 0.5),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+        childCount: rowCount,
       ),
     );
+  }
+
+  void _openVaultFile(_VaultFile file) {
+    final chapter = Chapter(
+      id: 0,
+      seriesId: 0,
+      name: file.name,
+      filePath: file.path,
+      sortOrder: 0,
+    );
+    context.pushNamed('reader', extra: chapter);
   }
 
   Future<void> _pickVaultFolder(WidgetRef ref) async {
@@ -575,18 +742,48 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
       ),
     );
 
-    await ref.read(scanNotifierProvider.notifier).scanFolder(result);
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setString('vault_folder_path', result);
 
-    final repo = ref.read(seriesRepositoryProvider);
-    final allSeries = await repo.getAllSeries();
-    for (final s in allSeries) {
-      if (!s.isVaulted && s.path.startsWith(result)) {
-        await repo.toggleVault(s.id);
-      }
-    }
-    ref.invalidate(vaultedSeriesProvider);
-    ref.invalidate(allSeriesProvider);
-    ref.invalidate(recentSeriesProvider);
+    await _scanVaultFolder(result);
+  }
+
+  void _showSearchDialog(WidgetRef ref) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceContainer,
+        title: const Text('Cari Series'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: AppColors.onSurface),
+          decoration: InputDecoration(
+            hintText: 'Nama series...',
+            hintStyle: const TextStyle(color: AppColors.outline),
+            filled: true,
+            fillColor: AppColors.surfaceContainerHigh,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              ref.read(searchQueryProvider.notifier).state = value.trim();
+              Navigator.pop(ctx);
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _addFolderToLibrary(WidgetRef ref) async {
@@ -610,16 +807,24 @@ class _LibraryViewState extends ConsumerState<_LibraryView> {
   }
 }
 
+class _VaultFile {
+  const _VaultFile({required this.name, required this.path});
+  final String name;
+  final String path;
+}
+
 class _GlassTopBar extends StatelessWidget {
   const _GlassTopBar({
     required this.folderPath,
     required this.scanState,
     required this.onAddFolder,
+    required this.onSearch,
   });
 
   final String folderPath;
   final AsyncValue<ScanResult?> scanState;
   final VoidCallback onAddFolder;
+  final VoidCallback onSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -670,7 +875,7 @@ class _GlassTopBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: onSearch,
             icon: const Icon(
               Icons.search,
               color: AppColors.onSurfaceVariant,
@@ -969,6 +1174,120 @@ class _BookCard extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VaultItemCard extends ConsumerWidget {
+  const _VaultItemCard({required this.file, required this.onTap});
+
+  final _VaultFile file;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final thumbnailAsync = ref.watch(vaultThumbnailProvider(file.path));
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.comic,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.comic,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              thumbnailAsync.when(
+                data: (thumbPath) {
+                  if (thumbPath != null && File(thumbPath).existsSync()) {
+                    return Image.file(
+                      File(thumbPath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _vaultPlaceholder(),
+                    );
+                  }
+                  return _vaultPlaceholder();
+                },
+                loading: () => _vaultPlaceholder(),
+                error: (_, __) => _vaultPlaceholder(),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.0),
+                        Colors.black.withValues(alpha: 0.2),
+                        Colors.black.withValues(alpha: 0.8),
+                      ],
+                      stops: const [0.0, 0.4, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        file.name,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black54,
+                              blurRadius: 4,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _vaultPlaceholder() {
+    return Container(
+      color: AppColors.surfaceContainerHigh,
+      child: Center(
+        child: Icon(
+          Symbols.picture_as_pdf,
+          size: 40,
+          color: AppColors.primary.withValues(alpha: 0.6),
         ),
       ),
     );

@@ -60,7 +60,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
   @override
   void initState() {
     super.initState();
-    _renderer = PdfRenderer(widget.chapter.filePath);
+    final settings = ref.read(settingsProvider);
+    final renderScale = _scaleValue(settings.renderScale);
+    _renderer = PdfRenderer(widget.chapter.filePath, renderScale: renderScale);
     _initRenderer();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _verticalScrollController.addListener(_onScroll);
@@ -106,6 +108,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
   }
 
   Future<void> _prefetchInitialPages() async {
+    unawaited(_renderer.prefetchRange(0, 4, RenderQuality.thumbnail));
     await _renderer.prefetchRange(0, 4, RenderQuality.lowRes);
     unawaited(_renderer.prefetchHighRes(0));
   }
@@ -126,6 +129,17 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([]);
     super.dispose();
+  }
+
+  double _scaleValue(RenderScale scale) {
+    switch (scale) {
+      case RenderScale.scale100:
+        return 1.0;
+      case RenderScale.scale150:
+        return 1.5;
+      case RenderScale.scale200:
+        return 2.0;
+    }
   }
 
   void _applyOrientation() {
@@ -191,11 +205,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
     final viewportHeight = position.viewportDimension;
     final scrollOffset = position.pixels;
 
-    if (_avgPageHeight == 0 && _renderer.hasDocument) {
-      _updateAvgPageHeight();
+    if (_avgPageHeight == 0) {
+      if (_renderer.hasDocument) {
+        _avgPageHeight = MediaQuery.of(context).size.width * 1.4;
+        _updateAvgPageHeight();
+      }
+      return;
     }
-
-    if (_avgPageHeight == 0) return;
 
     final firstVisible = (scrollOffset / _avgPageHeight).floor().clamp(0, _renderer.totalPages - 1);
     final lastVisible = ((scrollOffset + viewportHeight) / _avgPageHeight).ceil().clamp(0, _renderer.totalPages - 1);
@@ -206,6 +222,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
 
       final prefetchStart = (firstVisible - 2).clamp(0, _renderer.totalPages - 1);
       final prefetchEnd = (lastVisible + 2).clamp(0, _renderer.totalPages - 1);
+      unawaited(_renderer.prefetchRange(prefetchStart, prefetchEnd, RenderQuality.thumbnail));
       _renderer.prefetchRange(prefetchStart, prefetchEnd, RenderQuality.lowRes);
 
       _highResUpgradeTimer?.cancel();
@@ -566,6 +583,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
                         onChanged: (value) {
                           if (value != null) {
                             ref.read(settingsProvider.notifier).setRenderScale(value);
+                            _renderer.setRenderScale(_scaleValue(value));
                             setSheetState(() {});
                           }
                         },
@@ -679,6 +697,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with AutomaticKeepAlive
     return ListView.builder(
       controller: _verticalScrollController,
       physics: const ClampingScrollPhysics(),
+      cacheExtent: 800,
       itemCount: _renderer.totalPages,
       itemBuilder: (context, index) {
         return _ProgressivePageImage(
@@ -930,7 +949,13 @@ class _ProgressivePageImageState extends State<_ProgressivePageImage> with Autom
   Future<void> _loadProgressive() async {
     if (!mounted) return;
 
-    final rawThumb = await widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.thumbnail);
+    // Start all 3 quality loads concurrently
+    final thumbFuture = widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.thumbnail);
+    final lowResFuture = widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.lowRes);
+    final highResFuture = widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.highRes);
+
+    // Phase 0: thumbnail (show ASAP)
+    final rawThumb = await thumbFuture;
     final thumb = rawThumb?.clone();
     if (mounted) {
       setState(() {
@@ -939,7 +964,8 @@ class _ProgressivePageImageState extends State<_ProgressivePageImage> with Autom
       });
     }
 
-    final rawLow = await widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.lowRes);
+    // Phase 1: lowRes (already started concurrently)
+    final rawLow = await lowResFuture;
     final low = rawLow?.clone();
     if (mounted) {
       setState(() {
@@ -948,7 +974,8 @@ class _ProgressivePageImageState extends State<_ProgressivePageImage> with Autom
       });
     }
 
-    final rawHigh = await widget.renderer.getPageImage(widget.pageIndex, quality: RenderQuality.highRes);
+    // Phase 2: highRes (already started concurrently)
+    final rawHigh = await highResFuture;
     final high = rawHigh?.clone();
     if (mounted) {
       setState(() {

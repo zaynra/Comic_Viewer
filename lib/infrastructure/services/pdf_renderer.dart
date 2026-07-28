@@ -56,7 +56,7 @@ Future<PdfPageImage?> _renderLowResIsolate(_RenderParams params) async {
 }
 
 class PdfRenderer {
-  PdfRenderer(this._filePath, {double renderScale = 1.5}) : _renderScale = renderScale;
+  PdfRenderer(this._filePath, {double renderScale = 1.0}) : _renderScale = renderScale;
 
   final String _filePath;
   double _renderScale;
@@ -277,7 +277,8 @@ class PdfRenderer {
   }
 
   Future<void> prefetchHighRes(int index) async {
-    if (index >= 0 && index < _totalPages && !_imageCache.containsKey(index)) {
+    final key = _cacheKey(index, RenderQuality.highRes);
+    if (index >= 0 && index < _totalPages && !_imageCache.containsKey(key)) {
       unawaited(_convertToImage(index, RenderQuality.highRes));
     }
   }

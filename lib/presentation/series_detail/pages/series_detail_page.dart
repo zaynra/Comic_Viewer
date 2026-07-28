@@ -11,6 +11,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/providers/data_providers.dart';
+import '../../../domain/entities/bookmark.dart';
 import '../../../domain/entities/chapter.dart';
 import '../../../domain/entities/series.dart';
 import '../../../domain/entities/thumbnail.dart';
@@ -56,7 +57,43 @@ class SeriesDetailPage extends ConsumerWidget {
                   ),
                   const Spacer(),
                   TextButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: const BoxDecoration(
+                            color: AppColors.surfaceContainer,
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(width: 48, height: 6,
+                                decoration: BoxDecoration(
+                                  color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(3)),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              const Text('Urutkan Chapter',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                              const SizedBox(height: AppSpacing.md),
+                              ListTile(
+                                leading: const Icon(Icons.sort_by_alpha, color: AppColors.primary),
+                                title: const Text('Nomor (ASC)', style: TextStyle(color: AppColors.onSurface)),
+                                trailing: const Icon(Icons.check, color: AppColors.primary, size: 18),
+                                onTap: () => Navigator.pop(ctx),
+                              ),
+                              ListTile(
+                                leading: const Icon(Icons.sort_by_alpha, color: AppColors.onSurfaceVariant),
+                                title: const Text('Nomor (DESC)', style: TextStyle(color: AppColors.onSurface)),
+                                onTap: () => Navigator.pop(ctx),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                     icon: const Icon(Icons.sort, size: 16),
                     label: const Text('Sort'),
                   ),
@@ -408,6 +445,31 @@ void _showCoverOptions(BuildContext context, WidgetRef ref, Series series, Thumb
   );
 }
 
+Future<void> _confirmDeleteSeries(BuildContext context, WidgetRef ref, Series series) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.surfaceContainer,
+      title: const Text('Hapus Series'),
+      content: Text('Yakin ingin menghapus "${series.name}"? Tindakan ini tidak bisa dibatalkan.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Hapus', style: TextStyle(color: AppColors.error)),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    await ref.read(seriesRepositoryProvider).deleteSeries(series.id);
+    ref.invalidate(allSeriesProvider);
+    ref.invalidate(favoriteSeriesProvider);
+    if (context.mounted) Navigator.of(context).pop();
+  }
+}
+
 class _PlaceholderCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -460,15 +522,41 @@ class _MetadataSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isFavAsync = ref.watch(isFavoriteProvider(series.id));
+
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
+          // Favorite button
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.glassBorderSubtle),
+            ),
+            child: IconButton(
+              icon: isFavAsync.when(
+                data: (isFav) => Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  color: isFav ? Colors.redAccent : AppColors.onSurfaceVariant,
+                ),
+                loading: () => const Icon(Icons.favorite_border, color: AppColors.onSurfaceVariant),
+                error: (_, __) => const Icon(Icons.favorite_border, color: AppColors.onSurfaceVariant),
+              ),
+              onPressed: () async {
+                await ref.read(favoritesRepositoryProvider).toggleFavorite(series.id);
+                ref.invalidate(isFavoriteProvider(series.id));
+                ref.invalidate(favoriteSeriesProvider);
+              },
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+
           // Resume button
           Expanded(
             child: PrimaryButton(
-              label: 'Resume Reading',
-              icon: Icons.play_circle,
+              label: 'Lanjut Baca',
               onPressed: () {
                 chaptersAsync.whenData((chapters) {
                   if (chapters.isNotEmpty) {
@@ -488,11 +576,33 @@ class _MetadataSection extends ConsumerWidget {
               border: Border.all(color: AppColors.glassBorderSubtle),
             ),
             child: IconButton(
-              icon: Icon(
-                Symbols.bookmark_add,
-                color: AppColors.onSurfaceVariant,
-              ),
-              onPressed: () {},
+              icon: const Icon(Icons.bookmark_add_outlined, color: AppColors.onSurfaceVariant),
+              tooltip: 'Bookmark',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: AppColors.surfaceContainer,
+                    title: const Text('Bookmark'),
+                    content: const Text('Bookmark halaman saat ini?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+                      TextButton(
+                        onPressed: () {
+                          ref.read(bookmarkRepositoryProvider).addBookmark(
+                            Bookmark(id: 0, chapterId: 0, page: 0, createdAt: DateTime.now()),
+                          );
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Bookmark ditambahkan')),
+                          );
+                        },
+                        child: const Text('Simpan'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -505,11 +615,59 @@ class _MetadataSection extends ConsumerWidget {
               border: Border.all(color: AppColors.glassBorderSubtle),
             ),
             child: IconButton(
-              icon: Icon(
-                Symbols.more_vert,
-                color: AppColors.onSurfaceVariant,
-              ),
-              onPressed: () {},
+              icon: const Icon(Icons.more_vert, color: AppColors.onSurfaceVariant),
+              tooltip: 'Lainnya',
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: const BoxDecoration(
+                      color: AppColors.surfaceContainer,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(width: 48, height: 6,
+                          decoration: BoxDecoration(
+                            color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(3)),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        ListTile(
+                          leading: const Icon(Icons.lock_outline, color: AppColors.onSurfaceVariant),
+                          title: Text(series.isVaulted ? 'Hapus dari Vault' : 'Pindah ke Vault',
+                            style: const TextStyle(color: AppColors.onSurface)),
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await ref.read(seriesRepositoryProvider).toggleVault(series.id);
+                            ref.invalidate(allSeriesProvider);
+                            ref.invalidate(vaultedSeriesProvider);
+                            ref.invalidate(isVaultedProvider(series.id));
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.image_outlined, color: AppColors.onSurfaceVariant),
+                          title: const Text('Edit Cover', style: TextStyle(color: AppColors.onSurface)),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _showCoverOptions(context, ref, series, null);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                          title: const Text('Hapus Series', style: TextStyle(color: AppColors.error)),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _confirmDeleteSeries(context, ref, series);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -525,7 +683,64 @@ class _ActionButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const SizedBox.shrink();
+    return chaptersAsync.when(
+      data: (chapters) {
+        if (chapters.isEmpty) return const SizedBox.shrink();
+        final inProgress = chapters.where((c) => c.currentPage > 0 && !c.isRead).toList();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Row(
+            children: [
+              if (inProgress.isNotEmpty)
+                Expanded(
+                  child: PrimaryButton(
+                    label: 'Lanjutkan Membaca',
+                    icon: Icons.play_circle,
+                    onPressed: () => context.pushNamed('reader', extra: inProgress.first),
+                  ),
+                ),
+              if (inProgress.isNotEmpty) const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => context.pushNamed('reader', extra: chapters.first),
+                  icon: const Icon(Icons.replay, size: 18),
+                  label: const Text('Baca dari Awal'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusLg),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: AppColors.errorContainer,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.error, size: 16),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Gagal memuat chapter: $e',
+                  style: const TextStyle(color: AppColors.error, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -42,19 +42,43 @@ Scaffold
 - Spacer → `IconButton` add folder (Icons.create_new_folder_outlined) → search (Icons.search)
 - `onAddFolder` callback → `_addFolderToLibrary()` uses FilePicker + scanFolder + invalidate providers
 
-### Vault Access
+### Vault — Flat PDF Mode (Berbeda dari Library)
+Vault **tidak** menggunakan model Series/Chapter seperti tab All Items. Vault scan folder langsung untuk file `*.pdf` dan menampilkan setiap PDF sebagai item individual di shelf grid.
+
+**Perbedaan dengan Library:**
+| Aspek | Library (All Items) | Vault |
+|-------|---------------------|-------|
+| Data model | Series → Chapters | Langsung PDF files |
+| Display | Per-series (folder) | Per-file (individual) |
+| Tap → | Series Detail page | Reader langsung |
+| Scan | `scanNotifier` → DB | `dir.listSync()` langsung |
+| Storage | SQLite Series/Chapters | SharedPreferences (path only) |
+
+**Data Flow:**
+```
+User pilih folder vault
+  → FilePicker → simpan path ke SharedPreferences key 'vault_folder_path'
+  → Directory(folder).listSync(recursive: true) filter *.pdf
+  → Sort by name natural
+  → Tampilkan di _VaultGrid (2-column shelf)
+  → Tap → buat Chapter(id:0, seriesId:0, name, filePath) → pushNamed('reader', extra: chapter)
+```
+
+**Vault Access:**
 - Tab Vault index 2 requires PIN
 - PIN dialog: 4-digit input, each digit separate TextField, auto-focus next
 - PIN: `2305` (hardcoded)
 - Success: `_vaultUnlocked = true`, switch to tab 2
 - Failure: clear all, show "PIN salah", reset focus to first digit
-- `_pickVaultFolder()`: scan folder + auto-toggle vault for all series in that folder
-- `_addFolderToLibrary()`: scan folder + invalidate allSeriesProvider, recentSeriesProvider, vaultedSeriesProvider
+- `_pickVaultFolder()`: simpan path ke SharedPrefs + scan PDF langsung (tanpa scanNotifier)
+- `_vaultFiles` state: List of `_VaultFile` objects (name + path), di-load otomatis di initState
+- `_VaultItemCard`: icon PDF, gradient overlay + nama file, tap → reader
+- `_loadVaultFolder()`: baca SharedPrefs → scan ulang setiap app restart
 
 ### Empty States
 - All Items: `_EmptyState` with book icon + "Tidak ada series ditemukan" + "Pindai Ulang" button
 - Recent: history icon + "Tidak ada aktivitas terbaru"
-- Vault: lock icon + "Vault kosong" + "Pilih Folder untuk Vault" button
+- Vault: lock icon + "Vault kosong" + "Pilih Folder untuk Vault" button (muncul hanya jika `_vaultFiles` kosong)
 
 ---
 

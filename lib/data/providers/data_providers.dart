@@ -98,6 +98,11 @@ final thumbnailBySeriesProvider =
   return service.getThumbnail(seriesId, series.path);
 });
 
+final vaultThumbnailProvider = FutureProvider.family<String?, String>((ref, filePath) async {
+  final service = ref.watch(thumbnailServiceProvider);
+  return service.getVaultThumbnail(filePath);
+});
+
 final favoriteSeriesProvider = FutureProvider<List<Series>>((ref) async {
   final repo = ref.watch(favoritesRepositoryProvider);
   return repo.getFavoriteSeries();

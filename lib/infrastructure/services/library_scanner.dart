@@ -167,6 +167,11 @@ class LibraryScanner {
         sortOrder: 1,
       );
       await _chaptersRepository.insertChapter(chapter);
+    } else {
+      final updated = chapter.copyWith(seriesId: series.id, name: chapterName);
+      if (updated != chapter) {
+        await _chaptersRepository.updateChapter(updated);
+      }
     }
   }
 
@@ -174,21 +179,16 @@ class LibraryScanner {
     debugPrint('[SCANNER] _findPdfFiles: ${dir.path}');
     final pdfs = <String>[];
     try {
-      debugPrint('[SCANNER] Listing directory contents...');
-      final entities = dir.listSync();
-      debugPrint('[SCANNER] Found ${entities.length} entities in ${dir.path}');
-      
+      final entities = dir.listSync(recursive: false);
       for (final entity in entities) {
-        debugPrint('[SCANNER]   Entity: ${entity.path} (${entity.runtimeType})');
         if (entity is File && _isPdf(entity.path)) {
-          debugPrint('[SCANNER]   -> PDF found: ${entity.path}');
           pdfs.add(entity.path);
+        } else if (entity is Directory) {
+          pdfs.addAll(_findPdfFiles(entity));
         }
       }
-      debugPrint('[SCANNER] Total PDFs in ${dir.path}: ${pdfs.length}');
     } catch (e) {
-      debugPrint('[SCANNER] ERROR listing directory ${dir.path}: $e');
-      debugPrint('[SCANNER] This may be a permission issue. Please grant "All files access" permission.');
+      debugPrint('[SCANNER] ERROR scanning ${dir.path}: $e');
     }
     return pdfs;
   }

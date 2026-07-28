@@ -48,12 +48,83 @@ class _ThumbnailViewerPageState extends ConsumerState<ThumbnailViewerPage> {
     setState(() => _selectedPage = page);
     widget.onPageSelected?.call(page);
 
-    // Scroll to make the selected page visible
-    final targetOffset = page * 180.0; // Approximate item height
+    final targetOffset = page * 180.0;
     _scrollController.animateTo(
       targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
+    );
+  }
+
+  void _showSettingsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: const BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48, height: 6,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const Text('Pengaturan Thumbnail',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+            const SizedBox(height: AppSpacing.md),
+            ListTile(
+              leading: const Icon(Icons.refresh, color: AppColors.onSurfaceVariant),
+              title: const Text('Regenerate Thumbnails',
+                style: TextStyle(color: AppColors.onSurface)),
+              onTap: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showOverflowMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: const BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48, height: 6,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const Text('Opsi Lain',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+            const SizedBox(height: AppSpacing.md),
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: AppColors.onSurfaceVariant),
+              title: const Text('Detail File',
+                style: TextStyle(color: AppColors.onSurface)),
+              onTap: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -87,31 +158,37 @@ class _ThumbnailViewerPageState extends ConsumerState<ThumbnailViewerPage> {
                 ),
               ),
               actions: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: AppRadius.pill,
-                  ),
-                  child: const Icon(
-                    Icons.settings_outlined,
-                    color: AppColors.onSurfaceVariant,
-                    size: 20,
+                GestureDetector(
+                  onTap: () => _showSettingsMenu(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh,
+                      borderRadius: AppRadius.pill,
+                    ),
+                    child: const Icon(
+                      Icons.settings_outlined,
+                      color: AppColors.onSurfaceVariant,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: AppRadius.pill,
-                  ),
-                  child: const Icon(
-                    Icons.more_vert_rounded,
-                    color: AppColors.onSurfaceVariant,
-                    size: 20,
+                GestureDetector(
+                  onTap: () => _showOverflowMenu(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh,
+                      borderRadius: AppRadius.pill,
+                    ),
+                    child: const Icon(
+                      Icons.more_vert_rounded,
+                      color: AppColors.onSurfaceVariant,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],

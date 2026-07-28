@@ -6,12 +6,11 @@
 
 | Lokasi | Icon | File:Line | Status |
 |--------|------|-----------|--------|
-| Home page (top bar) | `Icons.search` | `home_page.dart:673` | Empty callback `() {}` |
-| Series Detail | `Symbols.search` | `series_detail_page.dart:125` | Empty callback `() {}` |
-| History page | `Icons.search_rounded` | `history_page.dart:46-58` | Tidak ada handler sama sekali |
+| Home page (top bar) | `Icons.search` | `home_page.dart` | ✅ Dialog search terhubung ke `searchQueryProvider` |
+| Series Detail | `Symbols.search` | `series_detail_page.dart:125` | ✅ Dialog search via home page |
+| History page | `Icons.search_rounded` | `history_page.dart:46-58` | ✅ GestureDetector + dialog search |
 
-**Infra:** `searchQueryProvider` + `searchResultsProvider` sudah siap di `data_providers.dart` tapi tidak pernah dipanggil dari UI.  
-**Perlu:** SearchDelegate, search dialog, atau search bar.
+**Perbaikan:** Search dialog di-homepage & history dengan `searchQueryProvider`.
 
 ---
 
@@ -19,10 +18,10 @@
 
 | Lokasi | Icon | File:Line | Status |
 |--------|------|-----------|--------|
-| Series Detail | `Symbols.favorite` (?) | Belum ada di UI | Tidak ada button favorite sama sekali |
+| Series Detail | `Icons.favorite` / `Icons.favorite_border` | `series_detail_page.dart` | ✅ Favorite toggle button wired |
+| Home page | Favorites tab (index 2) | `home_page.dart` | ✅ Tab Favorites + `_buildFavoritesSliver` + `favoriteSeriesProvider` |
 
-**Infra:** `favoriteSeriesProvider`, `isFavoriteProvider`, `FavoritesRepositoryImpl` — semua sudah siap & full CRUD dengan SQLite.  
-**Perlu:** Favorite icon di series detail / book card, toggle favorite, favorites tab/list.
+**Perbaikan:** Favorite toggle di Series Detail + Favorites tab di Home.
 
 ---
 
@@ -30,10 +29,9 @@
 
 | Lokasi | Icon | File:Line | Status |
 |--------|------|-----------|--------|
-| Series Detail | `Symbols.bookmark_add` | `series_detail_page.dart:495` | Empty callback `() {}` |
+| Series Detail | `Symbols.bookmark_add` | `series_detail_page.dart` | ✅ Dialog bookmark + `addBookmark()` call |
 
-**Infra:** `BookmarkRepositoryImpl` sudah siap. Reader page sudah punya `_checkBookmark()`.  
-**Perlu:** Wire button ke bookmark repository.
+**Perbaikan:** Wire button ke `bookmarkRepositoryProvider`.
 
 ---
 
@@ -41,10 +39,10 @@
 
 | Lokasi | Icon | File:Line | Status |
 |--------|------|-----------|--------|
-| Series Detail | `Symbols.more_vert` | `series_detail_page.dart:512` | Empty callback `() {}` |
-| Thumbnail Viewer | `Icons.more_vert_rounded` | `thumbnail_viewer_page.dart:103-116` | Tidak ada handler |
+| Series Detail | `Symbols.more_vert` | `series_detail_page.dart` | ✅ Bottom sheet dengan opsi (Vault, Edit Cover, Hapus) |
+| Thumbnail Viewer | `Icons.more_vert_rounded` | `thumbnail_viewer_page.dart` | ✅ GestureDetector + bottom sheet opsi |
 
-**Perlu:** Bottom sheet / popup menu dengan opsi (edit, delete, vault settings, dll).
+**Perbaikan:** Kedua button di-wire ke bottom sheet.
 
 ---
 
@@ -52,20 +50,20 @@
 
 | Lokasi | Icon | File:Line | Status |
 |--------|------|-----------|--------|
-| Series Detail | `Icons.sort` | `series_detail_page.dart:59` | Empty callback `() {}` |
+| Series Detail | `Icons.sort` | `series_detail_page.dart:59` | ✅ Bottom sheet sort options (ASC/DESC) |
 
-**Perlu:** Sort options dialog untuk chapters (by number, by date, ascending/descending).
+**Perbaikan:** Dialog dengan opsi Nomor ASC / DESC.
 
 ---
 
 ## 6. Settings — Static Sections
 
-| Section | File:Line | Masalah |
-|---------|-----------|---------|
-| **View Mode** | `settings_page.dart:181-243` | Hanya teks "Fit Width" + "Active" — tidak bisa diubah |
-| **Scroll Mode** | `settings_page.dart:246-308` | Hanya teks "Vertical Scroll" + "Active" — tidak bisa diubah |
+| Section | File:Line | Status |
+|---------|-----------|--------|
+| **View Mode** | `settings_page.dart` | ✅ GestureDetector + bottom sheet dengan pilihan `FitMode` |
+| **Scroll Mode** | `settings_page.dart` | ✅ GestureDetector + bottom sheet dengan pilihan `ReadingMode` |
 
-**Perlu:** Hapus atau jadikan kontrol nyata.
+**Perbaikan:** Kedua section jadi interaktif dengan bottom sheet dialog + wiring ke `settingsProvider`.
 
 ---
 
@@ -73,10 +71,10 @@
 
 | Tile | File:Line | Status |
 |------|-----------|--------|
-| "Version" (0.2.0) | `settings_page.dart:397` | Empty callback `() {}` |
-| "Built with" (Flutter + Riverpod) | `settings_page.dart:403` | Empty callback `() {}` |
+| "Version" (0.2.0) | `settings_page.dart` | ✅ Dialog info versi |
+| "Built with" (Flutter + Riverpod) | `settings_page.dart` | ✅ Dialog tech stack |
 
-**Perlu:** Dialog changelog / licenses / tech stack info.
+**Perbaikan:** Kedua tile di-wire ke AlertDialog.
 
 ---
 
@@ -84,9 +82,9 @@
 
 | Lokasi | File:Line | Status |
 |--------|-----------|--------|
-| Series Detail | `series_detail_page.dart:37, 521-529` | `build()` returns `const SizedBox.shrink()` — tidak render apapun |
+| Series Detail | `series_detail_page.dart` | ✅ Implementasi: "Lanjutkan Membaca" + "Baca dari Awal" |
 
-**Perlu:** Implementasi (Resume Reading, Mark Read, dll) atau hapus.
+**Perbaikan:** Implementasi dengan tombol Resume + Read from Beginning.
 
 ---
 
@@ -94,9 +92,9 @@
 
 | Lokasi | Icon | File:Line | Status |
 |--------|------|-----------|--------|
-| History page | `Icons.search_rounded` | `history_page.dart:46-58` | Hanya Container + Icon — tidak ada `GestureDetector` atau `onTap` |
+| History page | `Icons.search_rounded` | `history_page.dart` | ✅ GestureDetector + search dialog + `searchQueryProvider` |
 
-**Perlu:** Bungkus dengan `GestureDetector` atau `IconButton`, wire ke search.
+**Perbaikan:** Bungkus dengan `GestureDetector`, wire ke search dialog.
 
 ---
 
@@ -104,19 +102,45 @@
 
 | Lokasi | Icon | File:Line | Status |
 |--------|------|-----------|--------|
-| Thumbnail Viewer | `Icons.settings_outlined` | `thumbnail_viewer_page.dart:89-102` | Hanya Container — tidak ada handler |
+| Thumbnail Viewer | `Icons.settings_outlined` | `thumbnail_viewer_page.dart` | ✅ GestureDetector + bottom sheet (Regenerate Thumbnails) |
+| Thumbnail Viewer | `Icons.more_vert_rounded` | `thumbnail_viewer_page.dart` | ✅ GestureDetector + bottom sheet (Detail File) |
 
-**Perlu:** Bungkus dengan `GestureDetector`, wire ke settings atau thumbnail preferences.
+**Perbaikan:** Kedua icon di-wire dengan `GestureDetector` ke bottom sheet.
+
+---
+
+## 11. Vault — Flat PDF Mode
+
+**Status: ✅ SELESAI**
+
+> Vault scan folder langsung untuk `*.pdf`, setiap PDF = 1 shelf item, tap → reader langsung. Tidak pakai Series/Chapter model.
+
+| # | Todo | Detail |
+|---|------|--------|
+| 1 | Simpan vault folder path ke SharedPreferences | Key `vault_folder_path`, load otomatis saat start |
+| 2 | `_pickVaultFolder()` — ganti logika | Hapus `scanFolder()` + `toggleVault()`. Simpan path, scan recursive `*.pdf`, simpan daftar |
+| 3 | `_buildVaultSliver()` — ganti tampilan | Dari `vaultedSeriesProvider` → grid dari `_vaultFiles` state, setiap PDF = 1 item |
+| 4 | Tampilkan PDF sebagai shelf item | Setiap PDF tampil sebagai kartu dengan nama file, icon/pdf thumbnail |
+| 5 | Tap vault item → Reader | Buat Chapter sementara (id:0, seriesId:0) dari file path → navigasi reader |
+| 6 | Load vault folder otomatis | Baca SharedPreferences di initState, scan ulang PDFs tiap vault tab dibuka |
+| 7 | Seri detail vault toggle tetap jalan | `isVaulted` di Series Detail tetap bisa toggle, tapi vault tab independen |
 
 ---
 
 ## Total Ringkasan
 
-| Kategori | Jumlah |
-|----------|--------|
-| Empty callbacks `() {}` | 7 |
-| Inert icons (no handler) | 3 |
-| Static settings sections | 2 |
-| Dead widget (SizedBox.shrink) | 1 |
-| **Total non-working** | **13** |
-| **Working properly** | ~6 (settings: brightness, night filter, keep screen on, auto continue, direction, orientation) |
+| Kategori | Jumlah | Status |
+|----------|--------|--------|
+| Search (3 lokasi) | 3 | ✅ Selesai |
+| Favorite toggle + tab | 2 | ✅ Selesai |
+| Bookmark | 1 | ✅ Selesai |
+| Overflow menu (2 lokasi) | 2 | ✅ Selesai |
+| Sort button | 1 | ✅ Selesai |
+| Settings View Mode | 1 | ✅ Selesai |
+| Settings Scroll Mode | 1 | ✅ Selesai |
+| Settings Info Tiles | 2 | ✅ Selesai |
+| `_ActionButtons` dead widget | 1 | ✅ Selesai |
+| History search icon | 1 | ✅ Selesai |
+| Thumbnail viewer icons | 2 | ✅ Selesai |
+| Vault — Flat PDF Mode | 7 | ✅ Selesai |
+| **Total** | **20** | **✅ Semua selesai** |

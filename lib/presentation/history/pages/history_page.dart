@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_radius.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../data/providers/data_providers.dart';
 import '../../shared/widgets/glass_app_bar.dart';
 import '../../shared/widgets/glass_bottom_nav.dart';
 import '../providers/history_provider.dart';
@@ -43,17 +44,57 @@ class HistoryPage extends ConsumerWidget {
                     ),
                   ),
                   actions: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHigh,
-                        borderRadius: AppRadius.pill,
-                      ),
-                      child: const Icon(
-                        Icons.search_rounded,
-                        color: AppColors.onSurfaceVariant,
-                        size: 20,
+                    GestureDetector(
+                      onTap: () {
+                        final controller = TextEditingController();
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: AppColors.surfaceContainer,
+                            title: const Text('Cari Series'),
+                            content: TextField(
+                              controller: controller,
+                              autofocus: true,
+                              style: const TextStyle(color: AppColors.onSurface),
+                              decoration: InputDecoration(
+                                hintText: 'Nama series...',
+                                hintStyle: const TextStyle(color: AppColors.outline),
+                                filled: true,
+                                fillColor: AppColors.surfaceContainerHigh,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppRadius.md),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              onSubmitted: (value) {
+                                if (value.trim().isNotEmpty) {
+                                  ref.read(searchQueryProvider.notifier).state = value.trim();
+                                  Navigator.pop(ctx);
+                                  context.go('/');
+                                }
+                              },
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('Batal'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerHigh,
+                          borderRadius: AppRadius.pill,
+                        ),
+                        child: const Icon(
+                          Icons.search_rounded,
+                          color: AppColors.onSurfaceVariant,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ],

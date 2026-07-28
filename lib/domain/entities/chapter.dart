@@ -73,7 +73,10 @@ class Chapter {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Chapter && other.id == id && other.filePath == filePath);
+      (other is Chapter &&
+          other.id == id &&
+          other.seriesId == seriesId &&
+          other.filePath == filePath);
 
   @override
   int get hashCode => Object.hash(id, filePath);
