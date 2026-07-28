@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:developer' as developer;
 
 import 'package:path/path.dart' as p;
+import 'package:pdfx/pdfx.dart';
 
 import '../../domain/entities/chapter.dart';
 import '../../domain/entities/series.dart';
@@ -118,6 +119,7 @@ class LibraryScanner {
       final chapterOrder = MetadataParser.parseSortOrder(filePath, chapterMetadata);
 
       var chapter = await _chaptersRepository.getChapterByFilePath(filePath);
+      final totalPages = await _getPdfPageCount(filePath);
       if (chapter == null) {
         chapter = Chapter(
           id: 0,
@@ -125,6 +127,7 @@ class LibraryScanner {
           name: chapterName,
           filePath: filePath,
           sortOrder: chapterOrder > 0 ? chapterOrder : order,
+          totalPages: totalPages,
         );
         await _chaptersRepository.insertChapter(chapter);
       } else {
@@ -132,6 +135,7 @@ class LibraryScanner {
           name: chapterName,
           sortOrder: chapterOrder > 0 ? chapterOrder : order,
           seriesId: series.id,
+          totalPages: totalPages,
         );
         if (updatedChapter != chapter) {
           await _chaptersRepository.updateChapter(updatedChapter);
@@ -159,6 +163,10 @@ class LibraryScanner {
 
     final chapterMetadata = await MetadataParser.parseChapterMetadata(pdfFile.path);
     final chapterName = MetadataParser.getDisplayName(pdfFile.path, chapterMetadata);
+    final chapterOrder = MetadataParser.parseSortOrder(pdfFile.path, chapterMetadata);
+    final existingChapters = await _chaptersRepository.getChaptersBySeriesId(series.id);
+    final sortOrder = chapterOrder > 0 ? chapterOrder : existingChapters.length + 1;
+    final totalPages = await _getPdfPageCount(pdfFile.path);
 
     var chapter = await _chaptersRepository.getChapterByFilePath(pdfFile.path);
     if (chapter == null) {
@@ -167,11 +175,17 @@ class LibraryScanner {
         seriesId: series.id,
         name: chapterName,
         filePath: pdfFile.path,
-        sortOrder: 1,
+        sortOrder: sortOrder,
+        totalPages: totalPages,
       );
       await _chaptersRepository.insertChapter(chapter);
     } else {
-      final updated = chapter.copyWith(seriesId: series.id, name: chapterName);
+      final updated = chapter.copyWith(
+        seriesId: series.id,
+        name: chapterName,
+        sortOrder: sortOrder,
+        totalPages: totalPages,
+      );
       if (updated != chapter) {
         await _chaptersRepository.updateChapter(updated);
       }
@@ -221,6 +235,17 @@ class LibraryScanner {
     }
 
     return nameA.compareTo(nameB);
+  }
+
+  Future<int> _getPdfPageCount(String filePath) async {
+    try {
+      final doc = await PdfDocument.openFile(filePath);
+      final count = doc.pagesCount;
+      await doc.close();
+      return count;
+    } catch (e) {
+      return 0;
+    }
   }
 }
 
