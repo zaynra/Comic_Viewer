@@ -15,7 +15,8 @@ Scaffold
                     │   ├── content sliver (based on _selectedTab):
                     │   │   0 → _buildAllItemsSliver → _ShelfGrid
                     │   │   1 → _buildRecentSliver  → _ShelfGrid
-                    │   │   2 → _buildVaultSliver   → _ShelfGrid (PIN protected)
+                    │   │   2 → _buildFavoritesSliver → _ShelfGrid
+                    │   │   3 → _buildVaultSliver   → _ShelfGrid (PIN protected)
                     │   └── SliverPadding (120px bottom space)
                     └── GlassBottomNav (Library / History / Settings)
 ```
@@ -25,7 +26,8 @@ Scaffold
 |-------|------|----------|-------------|
 | 0 | All Items | `allSeriesProvider` | All non-vaulted series |
 | 1 | Recent | `recentSeriesProvider` | Recently opened (limit 10) |
-| 2 | Vault | `vaultedSeriesProvider` | PIN-protected (PIN: 2305) |
+| 2 | Favorites | `favoriteSeriesProvider` | Favorited series |
+| 3 | Vault | `_vaultFiles` (local state) | PIN-protected (PIN: 2305) |
 
 ### _ShelfGrid (Shelf Layout)
 - `SliverList` with rows of 2 books per row
@@ -65,19 +67,20 @@ User pilih folder vault
 ```
 
 **Vault Access:**
-- Tab Vault index 2 requires PIN
+- Tab Vault index 3 requires PIN
 - PIN dialog: 4-digit input, each digit separate TextField, auto-focus next
 - PIN: `2305` (hardcoded)
-- Success: `_vaultUnlocked = true`, switch to tab 2
+- Success: `_vaultUnlocked = true`, switch to tab 3
 - Failure: clear all, show "PIN salah", reset focus to first digit
 - `_pickVaultFolder()`: simpan path ke SharedPrefs + scan PDF langsung (tanpa scanNotifier)
 - `_vaultFiles` state: List of `_VaultFile` objects (name + path), di-load otomatis di initState
-- `_VaultItemCard`: icon PDF, gradient overlay + nama file, tap → reader
+- `_VaultItemCard`: PDF thumbnail (via `vaultThumbnailProvider`), gradient overlay + nama file, tap → reader
 - `_loadVaultFolder()`: baca SharedPrefs → scan ulang setiap app restart
 
 ### Empty States
 - All Items: `_EmptyState` with book icon + "Tidak ada series ditemukan" + "Pindai Ulang" button
 - Recent: history icon + "Tidak ada aktivitas terbaru"
+- Favorites: heart icon + "Belum ada favorit"
 - Vault: lock icon + "Vault kosong" + "Pilih Folder untuk Vault" button (muncul hanya jika `_vaultFiles` kosong)
 
 ---
@@ -116,7 +119,7 @@ Scaffold
   - `[Next]` (navigate_next) → next page, disabled if last
 
 ### Settings Sheet
-- Render Scale: Radio buttons 150% (Cepat) / 200% (Tajam)
+- Render Scale: Radio buttons 100% (Normal) / 150% (Cepat) / 200% (Tajam)
 - Brightness: Slider (0.3 - 1.0)
 - Night Filter: Switch (orange overlay, 0-50%)
 - Keep Screen On: Switch
@@ -165,25 +168,76 @@ Scaffold
 ```
 Scaffold
 └── Consumer
-    └── Stack
-        ├── CustomScrollView
-        │   ├── SliverAppBar (series name, back button)
-        │   ├── SliverToBoxAdapter
-        │   │   └── Cover image (with edit overlay icon)
-        │   ├── SliverToBoxAdapter
-        │   │   └── Series info + vault toggle button (lock/unlock)
-        │   └── SliverList of chapters
-        └── Edit cover bottom sheet (triggered by tap on cover)
+    └── CustomScrollView
+        ├── _HeroHeader (SliverAppBar: cover thumbnail, blurred bg, series name/author/desc)
+        ├── _MetadataSection (favorite toggle, resume btn, bookmark, more menu)
+        ├── _ActionButtons ("Lanjut Baca" + "Baca dari Awal")
+        ├── "Recent Chapters" header + Sort button
+        └── _ChapterList (chaptersAsync.when)
 ```
 
-### Features
-- Thumbnail management: tap cover → bottom sheet
-  - "Regenerate from PDF" → delete + regenerate
-  - "Choose Custom Image" → FilePicker image
-  - "Remove Custom Cover" → delete custom, revert to auto
-- Source badge: "Auto-generated" or "Custom" on cover
-- Vault toggle: lock/unlock icon button → toggleVault + invalidate providers
-- Chapter list: tap → navigate to reader page
+### _ChapterItem
+- Thumbnail placeholder (48x64) with badge `#${chapter.sortOrder}`
+- Chapter name (max 1 line, ellipsis)
+- **`${chapter.totalPages} Pages`** — page count dari PDF (via `_getPdfPageCount`)
+- Progress bar + percentage (if active/in-progress)
+- Status icon: `download_done` (read), `download` (unread), `play_arrow` (in-progress)
+- Tap → `pushNamed('reader', extra: chapter)`
+
+### Overflow Menu (More)
+- **Vault/Pindah ke Vault** — toggle `isVaulted`
+- **Edit Cover** — `_showCoverOptions()`: Regenerate, Choose Custom, Remove
+- **Hapus Series** — konfirmasi dialog, cascade delete chapters + series, pop back
+
+### CRITICAL BUG HISTORY — JANGAN TERULANG
+
+#### Bug: Folder Import Tidak Mendeteksi PDF Setelah Hapus Series
+
+**Root Cause Chain:**
+
+1. **`deleteSeries()` tidak hapus chapters** (`series_repository_impl.dart:53`)
+   - Dulu: `DELETE FROM series WHERE id = ?` saja
+   - Chapters jadi orphaned (series_id mengarah ke id yang sudah dihapus)
+   - **Fix:** `DELETE FROM chapters WHERE series_id = ?` SEBELUM `DELETE FROM series`
+
+2. **`Chapter.==` hanya compare `id` + `filePath`** (`chapter.dart:77`)
+   - Scanner sudah punya logic update `seriesId` di `_scanSeriesFolder`:
+     ```dart
+     final updatedChapter = chapter.copyWith(seriesId: series.id);
+     if (updatedChapter != chapter) {  // <— SELALU FALSE karena == tidak cek seriesId
+       await _chaptersRepository.updateChapter(updatedChapter);
+     }
+     ```
+   - **Fix:** Tambah `other.seriesId == seriesId` ke operator `==`
+
+3. **`_addStandalonePdf` tidak punya `else` clause** (`library_scanner.dart:163`)
+   - Untuk folder flat (PDF tanpa subfolder di dalamnya), chapter yatim tidak pernah di-update
+   - **Fix:** Tambah `else { updated = chapter.copyWith(seriesId: series.id); updateChapter(updated); }`
+
+**Safety Net:**
+```
+deleteOrphanedChapters() → DELETE FROM chapters WHERE series_id NOT IN (SELECT id FROM series)
+```
+Dipanggil di awal setiap `scanFolder()`.
+
+**TL;DR:** Setiap hapus series, cascade hapus chapters dulu. Setiap scan, cleanup orphaned chapters. Jangan pernah lupa update `seriesId` saat update chapter.
+
+---
+
+### CRITICAL BUG — JANGAN TERULANG
+
+#### Bug: Overflow 43px pada "Lanjutkan Membaca"
+
+**Penyebab:** Tombol `PrimaryButton` dengan icon + text `"Lanjutkan Membaca"` terlalu lebar untuk `Row` yang sempit.
+
+**Fix:**
+```dart
+// SEBELUM (overflow):
+PrimaryButton(label: 'Lanjutkan Membaca', icon: Icons.play_arrow, ...)
+
+// SESUDAH (fix):
+PrimaryButton(label: 'Lanjut Baca', ...)  // tanpa icon, text pendek
+```
 
 ---
 
@@ -199,7 +253,8 @@ Scaffold
 ```
 
 ### Settings Items
-- **Render Scale**: radio 150% (Cepat) / 200% (Tajam)
+- **Render Scale**: radio 100% (Normal) / 150% (Cepat, DEFAULT) / 200% (Tajam)
+  - ⚠️ Default harus 150% (index 1), JANGAN ubah ke 100% — menyebabkan kualitas jelek
 - **Brightness**: slider
 - **Night Filter**: slider 0-50%
 - **Keep Screen On**: switch
@@ -243,6 +298,7 @@ Scaffold
 - Icon + label layout
 - Rounded corners (AppRadius.lg)
 - Busy state: CircularProgressIndicator
+- ⚠️ JANGAN gunakan icon untuk button di Row sempit — bisa overflow
 
 ### Glassmorphism Pattern
 ```dart
@@ -267,16 +323,53 @@ libraryFolderNotifierProvider → pick folder → save SharedPreferences
 allSeriesProvider → SeriesRepository.getAllSeries() (WHERE is_vaulted = 0)
 vaultedSeriesProvider → SeriesRepository.getVaultedSeries()
 recentSeriesProvider → RecentRepository.getRecentSeries(limit: 10)
+favoriteSeriesProvider → FavoritesRepository.getFavoriteSeries()
 scanNotifierProvider → LibraryScanner.scanFolder(folderPath)
 chaptersBySeriesProvider → ChaptersRepository.getChaptersBySeriesId(id)
 thumbnailBySeriesProvider → ThumbnailService.getThumbnail(id, path)
+vaultThumbnailProvider → ThumbnailService.getVaultThumbnail(filePath)
+```
+
+### Provider Invalidation Flow
+```
+scanFolder() selesai
+  → scanNotifierProvider state = AsyncData(ScanResult)
+  → listener di _LibraryView: invalidate allSeriesProvider, recentSeriesProvider, vaultedSeriesProvider
+  → UI rebuild dengan data baru
+```
+
+### LibraryScanner Flow
+```
+scanFolder(path)
+  1. deleteOrphanedChapters() ← safety net: hapus semua chapter tanpa parent series
+  2. listSync(recursive: false) root folder
+  3. For each entity:
+     a. Directory → _scanSeriesFolder(dir)
+        → _findPdfFiles(dir) — recursive: false, tapi rekursif ke subdir
+        → create/update Series (path sebagai key)
+        → create/update Chapters (file_path sebagai key, sort_order dari MetadataParser)
+        → totalPages dari _getPdfPageCount() — buka PDF via pdfx
+     b. File (PDF) → _addStandalonePdf(file)
+        → series: parent directory sebagai series
+        → sortOrder: dari MetadataParser.parseSortOrder atau existingChapters.length + 1
+        → totalPages dari _getPdfPageCount()
 ```
 
 ### Database Migrations (`app_database.dart`)
-- v1: initial schema
-- v2-6: incremental changes
-- v7: `ALTER TABLE series ADD COLUMN is_vaulted INTEGER DEFAULT 0`
-  - Wrapped in try-catch for duplicate column safety
+- v1: initial schema (series, chapters, library_index, reading_progress)
+- v2: CREATE reading_progress (migration)
+- v3: CREATE thumbnails
+- v4: CREATE favorites, recent, index recent
+- v5: ALTER series ADD COLUMN author, description, genres
+- v6: CREATE bookmarks, index bookmarks
+- v7: ALTER series ADD COLUMN is_vaulted INTEGER DEFAULT 0 (try-catch)
+
+### Critical SQLite Rules
+1. `series.path` UNIQUE — jangan insert duplicate path
+2. `chapters.file_path` UNIQUE — jangan insert duplicate file path
+3. FOREIGN KEY constraints TIDAK di-enforce (sqflite default) — manual cascade wajib
+4. `deleteSeries()` HARUS cascade: hapus chapters dulu, baru series
+5. `Chapter.==` HARUS include `seriesId` — agar dirty check di scanner bekerja
 
 ### Series Entity
 ```dart
@@ -286,5 +379,21 @@ class Series {
   final String path;
   final bool isVaulted;
   // ... copyWith, toMap, fromMap
+  // == operator: id + path (tidak perlu include field lain)
+}
+```
+
+### Chapter Entity
+```dart
+class Chapter {
+  final int id;
+  final int seriesId;
+  final String name;
+  final String filePath;
+  final int sortOrder;      // dari MetadataParser.parseSortOrder()
+  final int totalPages;     // dari _getPdfPageCount(), jangan default 0
+  final int currentPage;
+  final bool isRead;
+  // == operator: id + seriesId + filePath (HARUS include seriesId!)
 }
 ```

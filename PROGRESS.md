@@ -1,10 +1,8 @@
 # Omnivious Reader - Development Progress
 
-## Current Phase: Phase 11 — Vault Flat PDF Mode & Performance ✅
+## Current Phase: Phase 12 — Critical Bug Fixes ✅
 
 ---
-
-## Phase 0 — Skeleton ✅
 
 ## Phase 0 — Skeleton ✅
 **Completed:** 2026-07-24
@@ -126,9 +124,7 @@
 
 ---
 
----
-
-## Phase 11 — Vault Flat PDF Mode & Performance Fixes
+## Phase 11 — Vault Flat PDF Mode & Performance Fixes ✅
 **Completed:** 2026-07-28
 
 ### Vault Flat PDF Mode
@@ -150,7 +146,7 @@
 
 ---
 
-## Phase 12 — All TODO Items (Search, Favorite, Bookmark, dll)
+## Phase 11b — All TODO Items (Search, Favorite, Bookmark, dll) ✅
 **Completed:** 2026-07-28
 
 ### Search (3 lokasi)
@@ -186,6 +182,89 @@
 
 ---
 
+## Phase 12 — Critical Bug Fixes ✅
+**Completed:** 2026-07-28
+
+### Bug 1: Folder Import Tidak Mendeteksi PDF (ORPHANED CHAPTERS)
+
+**Gejala:** Setelah "Hapus Series", folder yang sama di-import ulang → series muncul tapi chapters kosong.
+
+**Akar Masalah (3 bugs berantai):**
+
+1. **`deleteSeries` tidak cascade hapus chapters** (`series_repository_impl.dart:53`)
+   - Hanya hapus dari tabel `series`, chapters tetap yatim (orphaned) di DB
+   - Fix: `db.delete('chapters', WHERE series_id = ?)` sebelum `db.delete('series', ...)`
+
+2. **`Chapter.==` operator hanya compare `id` + `filePath`** (`chapter.dart:77`)
+   - Scanner sudah punya `else` clause untuk update `seriesId` chapter yatim
+   - Tapi karena `==` tidak include `seriesId`, `updatedChapter != chapter` selalu false
+   - Fix: Tambah `other.seriesId == seriesId` ke operator `==`
+
+3. **`_addStandalonePdf` tidak punya `else` clause** (`library_scanner.dart:160`)
+   - Untuk folder flat (PDF langsung tanpa subfolder), chapter yatim tidak pernah di-update
+   - Fix: Tambah `else` block dengan `copyWith(seriesId: series.id) + updateChapter`
+
+**Safety Net:**
+- `deleteOrphanedChapters()` method baru → `DELETE FROM chapters WHERE series_id NOT IN (SELECT id FROM series)`
+- Dipanggil di awal `scanFolder()` — jamin tidak ada orphaned chapters
+
+**Files changed:**
+- `lib/data/repositories/series_repository_impl.dart` — cascade delete chapters
+- `lib/domain/entities/chapter.dart` — `==` include `seriesId`
+- `lib/infrastructure/services/library_scanner.dart` — `_addStandalonePdf` else clause + orphan cleanup
+- `lib/domain/repositories/chapters_repository.dart` — `deleteOrphanedChapters()` interface
+- `lib/data/repositories/chapters_repository_impl.dart` — `deleteOrphanedChapters()` implementation
+
+---
+
+### Bug 2: Overflow 43px pada "Lanjutkan Membaca" Button
+
+**Gejala:** Di Series Detail, tombol "Lanjutkan Membaca" overflow karena icon + text terlalu besar untuk Row.
+
+**Fix:**
+- Hapus icon dari `PrimaryButton`
+- Pendekkan label dari "Lanjutkan Membaca" → "Lanjut Baca"
+
+**File changed:** `lib/presentation/series_detail/pages/series_detail_page.dart`
+
+---
+
+### Bug 3: Kualitas PDF Sangat Jelek
+
+**Gejala:** Setelah render scale default diubah ke 100%, kualitas PDF turun drastis.
+
+**Akar Masalah:** Render scale default diubah ke index 0 (100%) saat menambahkan opsi "100% (Normal)". Seharusnya tetap default 150%.
+
+**Fix:** Kembalikan default ke index 1 (150%).
+
+**File changed:** `lib/presentation/settings/providers/settings_provider.dart:124`
+
+---
+
+### Bug 4: Total Pages Selalu 0
+
+**Gejala:** Di Series Detail, setiap chapter menampilkan "0 Pages".
+
+**Akar Masalah:** Method `_getPdfPageCount()` dihapus dari `LibraryScanner` saat migrasi dari backup. `totalPages` selalu default 0.
+
+**Fix:** Restore `_getPdfPageCount()` — buka PDF via `PdfDocument.openFile()` untuk dapat page count asli.
+
+**File changed:** `lib/infrastructure/services/library_scanner.dart`
+
+---
+
+### Bug 5: Nomor Chapter Selalu #1
+
+**Gejala:** Semua chapter di Series Detail menampilkan badge "#1".
+
+**Akar Masalah:** `_addStandalonePdf` selalu pakai `sortOrder: 1` untuk semua chapter.
+
+**Fix:** Hitung `sortOrder` dari `MetadataParser.parseSortOrder()` + jumlah chapters existing + 1.
+
+**File changed:** `lib/infrastructure/services/library_scanner.dart`
+
+---
+
 ## Post-MVP Fixes
 
 ### Manual Path Input (SAF Bypass)
@@ -211,16 +290,17 @@
 
 ---
 
-## SQLite Schema (v5 — Final)
+## SQLite Schema (v7 — Final)
 
 ```sql
-series: id, name, path (UNIQUE), cover_path, author, description, genres, created_at
+series: id, name, path (UNIQUE), cover_path, author, description, genres, is_vaulted, created_at
 chapters: id, series_id (FK), name, file_path (UNIQUE), sort_order, total_pages, current_page, is_read
-library_index: id, folder_path (UNIQUE), last_scanned_at
+library_index: id, folder_path (UNIQUE), last_scanned_at (unused)
 reading_progress: id, chapter_id (FK, UNIQUE), current_page, zoom_level, last_opened_at
 thumbnails: id, series_id (FK, UNIQUE), source, file_path, created_at
 favorites: id, series_id (FK, UNIQUE), created_at
 recent: id, series_id (FK), last_opened_at (indexed)
+bookmarks: id, chapter_id (FK), page, note, created_at, UNIQUE(chapter_id, page)
 ```
 
 ---

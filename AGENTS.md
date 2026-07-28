@@ -5,7 +5,7 @@
 - **Stack:** Flutter stable · Dart 3 · Riverpod · GoRouter · pdfx · sqflite · SharedPreferences
 - **Target:** Android (primary), iOS/Windows/Linux (secondary)
 - **UI Language:** Bahasa Indonesia
-- **Folder:** `D:\zayn\project\comic_viewer_phase0\comic_viewer\`
+- **Folder:** `D:\zayn\project\comic_viewer\`
 
 ## Architecture
 ### Clean Architecture Layers
@@ -49,6 +49,10 @@ lib/
 - ❌ JANGAN hardcode warna/spacing — pakai `AppColors.*`, `AppSpacing.*`, `AppRadius.*`
 - ❌ **JANGAN pakai font "Geist"** — tidak tersedia di Google Fonts, selalu fallback ke Inter
 - ❌ JANGAN push/commit ke branch `backup` — backup hanya untuk referensi
+- ❌ **JANGAN lupa cascade delete chapters saat `deleteSeries`** — lihat Bug #1 di SCREEN_SPEC.md
+- ❌ **JANGAN ubah operator `==` Chapter tanpa include `seriesId`** — menyebabkan orphan chapters
+- ❌ **JANGAN ubah render scale default dari 150%** — index 1 di RenderScale enum
+- ❌ **JANGAN hapus `_getPdfPageCount()`** — menyebabkan totalPages selalu 0
 
 ### DO
 - ✅ SELALU jalankan `flutter analyze` setelah selesai coding — pastikan **0 errors**
@@ -59,12 +63,18 @@ lib/
 - ✅ Ikuti pattern file yang sudah ada (cari referensi dulu sebelum buat baru)
 - ✅ `super.key` di constructor parameter
 - ✅ Untuk launcher icon: jalankan `dart run flutter_launcher_icons` setelah ubah logo
+- ✅ **`deleteSeries()` HARUS cascade**: hapus chapters dulu (`DELETE FROM chapters WHERE series_id = ?`), baru series
+- ✅ **Setiap `scanFolder()` panggil `deleteOrphanedChapters()`** sebagai safety net
+- ✅ **`_addStandalonePdf` HARUS punya `else` clause** untuk update orphan chapter's seriesId
+- ✅ **Hitung `sortOrder` dari `MetadataParser.parseSortOrder()` + existing chapters count**
+- ✅ **`totalPages` HARUS dari `_getPdfPageCount()`**, jangan default 0
 
 ### Git Workflow
 - **Main branch:** `main` — branch utama deployment ke GitHub
 - **Backup branch:** `backup` — referensi fitur lama, JANGAN di-touch
 - **Development:** langsung di `main` (sudah production)
 - SELALU cek `git status` dan `git diff` sebelum commit
+- **Commit message format:** `"Scope: description"` e.g. `"Fix: restore _getPdfPageCount for totalPages"`
 
 ## Design System & Conventions
 - **Theme:** Dark-first, surfaceContainerLowest `#060E20`, primary `#CFBCFF` (lavender)
@@ -74,75 +84,60 @@ lib/
 - **Radius tokens:** `AppRadius.sm(4)` / `md(8)` / `lg(12)` / `xl(16)` / `2xl(24)` / `pill(9999)`
 - **Spacing tokens:** `AppSpacing.xs(4)` / `sm(8)` / `md(16)` / `lg(24)` / `xl(32)`
 - **Button patterns:** `PrimaryButton` (shared widget) untuk CTA, circular `Container + IconButton` untuk sekunder
+- **⚠️ JANGAN gunakan icon di `PrimaryButton` dalam Row sempit** — bisa overflow 43px
 - **Widget barrel:** `lib/presentation/shared/widgets/widgets.dart` — export semua shared widgets
 - **Launcher Icon:** OR logo (assets/images/or_logo.png), adaptive icon dark bg #060E20
 
-## Current Development Phase: Phase 11 — All TODO Items Complete
+## Current Development Phase: Phase 12 — Critical Bug Fixes ✅
 
-### Completed
-- [x] **Vault Flat PDF Mode**: Vault scan folder langsung untuk `*.pdf`, setiap PDF = 1 shelf item, tap → reader langsung. Tidak pakai Series/Chapter model
-- [x] Vault folder path disimpan di SharedPreferences, auto-load di initState
-- [x] **Render Scale**: tambah opsi `100% (Normal)` sebagai default, wiring ke renderer
-- [x] **Slow Loading Fixes**:
-  - `cacheExtent: 800` di ListView.builder
-  - 3 fase loading concurrent (thumb/lowRes/highRes jalan bersamaan)
-  - Thumbnail prefetch di initial + scroll
-  - Fix `prefetchHighRes` key bug (sekarang benar cache highRes)
-  - Estimasi awal `_avgPageHeight` pakai `screenWidth * 1.4`
-- [x] `isVaulted` field, PIN dialog (2305), vault tab, toggle vault from series detail
-- [x] Shelf layout: `_ShelfGrid` + `_BookCard` replacing `SliverGrid` + `_ComicCard`
-- [x] All Items, Recent tabs use shelf layout (rak buku 2 kolom + shelf divider, vault pakai `_VaultGrid`)
-- [x] Folders tab: `_FolderCard` with folder grouping, glassmorphism
-- [x] ParentDataWidget error fixed: history_page.dart wrapped GlassBottomNav in Stack
-- [x] Multi-resolution PDF renderer (3-tier cache: thumbnail 0.5x / lowRes 1.0x / highRes 1.0x-2.0x)
-- [x] Background low-res rendering via `compute()` isolate (dengan fallback main thread)
-- [x] Progressive loading (`_ProgressivePageImage`): blurred thumb → low-res → high-res
-- [x] Scroll-based prefetch (visible ±2 lowRes + thumbnail, high-res upgrade after 2s idle)
-- [x] All settings buttons wired to Riverpod notifiers
-- [x] Controls auto-show/tap-to-toggle in reader
-- [x] Image clone fix: clone ui.Image segera setelah diterima — mencegah crash dispose
-- [x] Reader menu bar di bottom: [All Files] [Settings]
-- [x] OR logo applied: splash page, home page top bar
-- [x] Launcher icon: OR logo via flutter_launcher_icons
-- [x] **Search** (3 lokasi): Home, Series Detail, History — semua di-wire ke search dialog + `searchQueryProvider`
-- [x] **Favorite**: Heart toggle di Series Detail + Favorites tab (index 2) di Home
-- [x] **Bookmark**: `bookmark_add` → dialog + `addBookmark()` call
-- [x] **Overflow Menu**: Series Detail + Thumbnail Viewer → bottom sheet dengan opsi
-- [x] **Sort**: Bottom sheet ASC/DESC di Series Detail
-- [x] **Settings View Mode**: Dari static → interactive bottom sheet dengan `FitMode`
-- [x] **Settings Scroll Mode**: Dari static → interactive bottom sheet dengan `ReadingMode`
-- [x] **Settings Info Tiles**: Version + Built with → AlertDialog info
-- [x] **`_ActionButtons`**: Dari `SizedBox.shrink()` → Resume + Read from Beginning dengan navigasi
-- [x] **History search icon**: Container → GestureDetector + search dialog
-- [x] **Thumbnail viewer icons**: Settings + More → GestureDetector + bottom sheet
+### Completed (Phase 11 — Vault + TODO Items)
+- [x] Vault Flat PDF Mode + all 20 TODO items (Search, Favorite, Bookmark, Overflow, Sort, Settings, dll)
+- [x] Multi-resolution PDF renderer (3-tier cache + progressive loading)
+- [x] Shelf layout, glassmorphism, OR logo, launcher icon
+
+### Completed (Phase 12 — Bug Fixes)
+- [x] **Bug #1 — Folder import tidak deteksi PDF setelah "Hapus Series"**
+  - Fix: `deleteSeries()` cascade hapus chapters, `Chapter.==` include `seriesId`, `_addStandalonePdf` else clause, `deleteOrphanedChapters()` safety net
+- [x] **Bug #2 — Overflow 43px "Lanjutkan Membaca"**
+  - Fix: Hapus icon, text pendek "Lanjut Baca"
+- [x] **Bug #3 — Kualitas PDF jelek**
+  - Fix: Render scale default kembali ke 150% (index 1)
+- [x] **Bug #4 — Total Pages selalu 0**
+  - Fix: Restore `_getPdfPageCount()` method
+- [x] **Bug #5 — Nomor chapter selalu #1**
+  - Fix: `_addStandalonePdf` hitung `sortOrder` dari `parseSortOrder()` + existing count
 - [x] `flutter analyze` = 0 errors
 
 ### Pending
 - [ ] Performance benchmarks: cold start <200ms, scroll 60fps, RAM <150MB
 - [ ] Build APK release verification
-- [ ] Test scenarios: fast scroll, chapter change, vault open, settings change
+- [ ] Background isolate rendering fix (`BackgroundIsolateBinaryMessenger` error)
+- [ ] Scanner speed optimization for large folders
 
 ## Key Files Reference
 | File | Purpose |
 |------|---------|
 | `lib/presentation/home/pages/home_page.dart` | Home page: shelf layout, vault, tabs, glass top bar |
 | `lib/presentation/reader/pages/reader_page.dart` | Progressive loading reader + bottom menu bar + settings sheet |
-| `lib/presentation/settings/providers/settings_provider.dart` | All app settings + persistence |
+| `lib/presentation/settings/providers/settings_provider.dart` | All app settings + persistence (⚠️ renderScale default index 1=150%) |
 | `lib/infrastructure/services/pdf_renderer.dart` | 3-tier multi-resolution PDF renderer |
 | `lib/infrastructure/services/thumbnail_service.dart` | Thumbnail generate/regenerate/custom cover |
-| `lib/presentation/series_detail/pages/series_detail_page.dart` | Series detail: thumbnail mgmt, vault toggle |
+| `lib/presentation/series_detail/pages/series_detail_page.dart` | Series detail: thumbnail mgmt, vault toggle, chapters |
 | `lib/presentation/settings/pages/settings_page.dart` | Settings page |
 | `lib/data/providers/data_providers.dart` | All Riverpod providers barrel |
 | `lib/presentation/history/pages/history_page.dart` | History page with grouped history |
 | `lib/presentation/splash/pages/splash_page.dart` | Splash with OR logo + TickerProviderStateMixin |
 | `lib/data/databases/app_database.dart` | SQLite migrations (v7: is_vaulted) |
 | `lib/domain/entities/series.dart` | Series entity with isVaulted field |
+| `lib/domain/entities/chapter.dart` | ⚠️ Chapter entity — `==` MUST include `seriesId` |
+| `lib/data/repositories/series_repository_impl.dart` | ⚠️ `deleteSeries()` HARUS cascade hapus chapters dulu |
+| `lib/infrastructure/services/library_scanner.dart` | ⚠️ Scanner — `_addStandalonePdf` HARUS update orphan chapters |
 | `lib/core/constants/app_colors.dart` | Color tokens (MD3 + glassmorphism) |
 | `lib/core/constants/app_spacing.dart` | Spacing tokens |
 | `lib/core/constants/app_radius.dart` | Radius tokens |
 | `lib/core/theme/app_theme.dart` | ThemeData configuration |
 | `lib/presentation/shared/widgets/glass_bottom_nav.dart` | Floating pill bottom nav with glassmorphism |
-| `SCREEN_SPEC.md` | Detailed screen layout & behavior specs |
+| `SCREEN_SPEC.md` | Detailed screen layout, behavior specs, AND bug history |
 
 ## File Change Pattern
 ```dart
