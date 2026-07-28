@@ -31,6 +31,9 @@ class LibraryScanner {
       return ScanResult.error('Folder tidak ditemukan: $folderPath');
     }
 
+    // Clean up orphaned chapters first
+    await _chaptersRepository.deleteOrphanedChapters();
+
     int seriesCount = 0;
     int chapterCount = 0;
 

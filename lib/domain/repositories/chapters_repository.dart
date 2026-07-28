@@ -9,4 +9,5 @@ abstract class ChaptersRepository {
   Future<void> deleteChapter(int id);
   Future<void> deleteChaptersBySeriesId(int seriesId);
   Future<void> upsertChapter(Chapter chapter);
+  Future<void> deleteOrphanedChapters();
 }

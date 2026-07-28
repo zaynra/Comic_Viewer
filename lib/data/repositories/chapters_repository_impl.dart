@@ -62,6 +62,14 @@ class ChaptersRepositoryImpl implements ChaptersRepository {
   }
 
   @override
+  Future<void> deleteOrphanedChapters() async {
+    final db = await _db.database;
+    await db.rawDelete(
+      'DELETE FROM chapters WHERE series_id NOT IN (SELECT id FROM series)'
+    );
+  }
+
+  @override
   Future<void> upsertChapter(Chapter chapter) async {
     final existing = await getChapterByFilePath(chapter.filePath);
     if (existing != null) {
