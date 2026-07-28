@@ -17,7 +17,7 @@
 
 | # | Task | Detail | Status |
 |---|------|--------|--------|
-| 1 | Edit Cover | Implementasi upload cover dari galeri + regenerate dari PDF | ⏳ |
+| 1 | Edit Cover | ✅ Sudah: Regenerate from PDF, Choose Custom Image, Remove Custom Cover | ✅ |
 | 2 | Bookmark management | Lihat daftar bookmark, hapus bookmark | ⏳ |
 | 3 | Search di Series Detail | Search dialog spesifik untuk chapter dalam satu series | ⏳ |
 | 4 | Multiple library folders | Support multiple root folders (bukan cuma 1) | ⏳ |
